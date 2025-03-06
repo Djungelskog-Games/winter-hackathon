@@ -138,9 +138,9 @@ class ClassSelectionScreen:
 
         # Stats para tooltip
         self.stats = {
-            "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 3},
-            "Raposa": {"Vida": 100, "Ataque": 10, "Movimento": 2},
-            "Veado": {"Vida": 120, "Ataque": 12, "Movimento": 1}
+            "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 4},
+            "Raposa": {"Vida": 100, "Ataque": 10, "Movimento": 3},
+            "Veado": {"Vida": 120, "Ataque": 12, "Movimento": 2}
         }
         self.hovered_class = None
 

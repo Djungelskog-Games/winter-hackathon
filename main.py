@@ -18,10 +18,10 @@ SCALE = 2
 
 # -------------------- Classes de Interface --------------------
 class BotaoIcone:
-    def __init__(self, x, y, image_path, class_name, callback, player):
+    def __init__(self, x, y, image_path, class_name, callback, player, size = (150, 150)):
         try:
             self.image = pygame.image.load(image_path).convert_alpha()
-            self.image = pygame.transform.scale(self.image, (150, 150))
+            self.image = pygame.transform.scale(self.image, size)
         except pygame.error:
             self.image = pygame.Surface((150, 150))
             self.image.fill(DOURADO)
@@ -103,7 +103,7 @@ class ClassSelectionScreen:
         self.confirm_enabled = False
 
         self.screen = pygame.display.set_mode((self.largura, self.altura))
-        pygame.display.set_caption("Seleção de Classes")
+        pygame.display.set_caption("")
 
         try:
             self.bg_image = pygame.image.load("assets/Classes/Background.jpg").convert()
@@ -134,13 +134,13 @@ class ClassSelectionScreen:
         ]
         self.confirm_button = BotaoIcone(self.largura//2, self.altura - 100, 
                                          "assets/Classes/confirm_button.png", "Confirmar", 
-                                         lambda p, c: self.confirm_selection(), "confirm")
+                                         lambda p, c: self.confirm_selection(), "confirm", (700, 90))
 
         # Stats para tooltip
         self.stats = {
-            "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 3},
-            "Raposa": {"Vida": 100, "Ataque": 10, "Movimento": 2},
-            "Veado": {"Vida": 120, "Ataque": 12, "Movimento": 1}
+            "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 4},
+            "Raposa": {"Vida": 100, "Ataque": 10, "Movimento": 3},
+            "Veado": {"Vida": 120, "Ataque": 12, "Movimento": 2}
         }
         self.hovered_class = None
 
@@ -262,18 +262,17 @@ class Player:
         self.last_damage = 0
         self.damage_display_time = 0
 
-    def handle_input(self, keys, controls, grid_width, grid_height, other_player_pos):
+    def handle_input(self, key, controls, grid_width, grid_height, other_player_pos):
         if not self.moving and self.moves_remaining > 0:
-            for key, (dx, dy) in controls.items():
-                if keys[key]:
-                    new_grid_x = self.grid_x + dx
-                    new_grid_y = self.grid_y + dy
-                    if (0 <= new_grid_x < grid_width and 0 <= new_grid_y < grid_height
-                        and (new_grid_x, new_grid_y) != other_player_pos):
-                        self.dest_grid_x = new_grid_x
-                        self.dest_grid_y = new_grid_y
-                        self.moving = True
-                    break
+            if key in controls:
+                new_grid_x = self.grid_x + controls.get(key)[0]
+                new_grid_y = self.grid_y + controls.get(key)[1]
+                if (0 <= new_grid_x < grid_width and 0 <= new_grid_y < grid_height
+                    and (new_grid_x, new_grid_y) != other_player_pos):
+                    self.dest_grid_x = new_grid_x
+                    self.dest_grid_y = new_grid_y
+                    self.moving = True
+                return
 
     def update(self, dt):
         if self.moving:
@@ -330,8 +329,8 @@ class Player:
         pygame.draw.rect(display, CINZENTO, (x, y, bar_width, bar_height))
         pygame.draw.rect(display, VERDE, (x, y, fill, bar_height))
 
-def attack(attacker, defender):
-    if abs(attacker.grid_x - defender.grid_x) <= 1 and abs(attacker.grid_y - defender.grid_y) <= 1:
+def attack(attacker, defender, reach=1):
+    if abs(attacker.grid_x - defender.grid_x) <= reach and abs(attacker.grid_y - defender.grid_y) <= reach:
         damage = attacker.attack_damage
         defender.health -= damage
         defender.last_damage = damage
@@ -374,6 +373,7 @@ class World:
         self.mapa = []
         self.screen_width = display.get_width()
         self.screen_height = display.get_height()
+        self.key = None
         try:
             self.bg_image = pygame.image.load("assets/World/Background.jpg").convert()
             self.bg_image = pygame.transform.scale(self.bg_image, self.display.get_size())
@@ -442,17 +442,22 @@ class World:
                             attack(self.player2, self.player1)
                         if self.attack_sound:
                             self.attack_sound.play()
+                    elif event.type == pygame.KEYDOWN:
+                        self.key = event.key
+                    else:
+                        self.key = None
 
-            keys = pygame.key.get_pressed()
             if self.current_turn == "p1":
                 other_pos = (self.player2.grid_x, self.player2.grid_y)
-                self.player1.handle_input(keys, player1_controls, self.x, self.y, other_pos)
+                self.player1.handle_input(self.key, player1_controls, self.x, self.y, other_pos)
             else:
                 other_pos = (self.player1.grid_x, self.player1.grid_y)
-                self.player2.handle_input(keys, player2_controls, self.x, self.y, other_pos)
+                self.player2.handle_input(self.key, player2_controls, self.x, self.y, other_pos)
 
             self.player1.update(dt)
             self.player2.update(dt)
+
+            self.key = None
 
             if self.current_turn == "p1" and not self.player1.moving:
                 if self.player1.moves_remaining == 0:
@@ -506,14 +511,21 @@ class World:
         return winner
 
 class VictoryScreen:
-    def __init__(self, screen, font, winner):
+    def __init__(self, screen, font, winner, p1_score, p2_score, final=False):
         self.screen = screen
         self.font = font
         self.winner = winner
+        self.p1_score = p1_score
+        self.p2_score = p2_score
+        self.final = final
         self.largura = screen.get_width()
         self.altura = screen.get_height()
+        
         try:
-            pygame.mixer.music.load("assets/Sounds/victory_sound.wav")
+            if self.final:
+                pygame.mixer.music.load("assets/Sounds/victory_sound.wav")
+            else:
+                pygame.mixer.music.load("assets/Sounds/round_victory.wav")
             pygame.mixer.music.play(-1)
         except:
             pass
@@ -523,13 +535,34 @@ class VictoryScreen:
         clock = pygame.time.Clock()
         while running:
             self.screen.fill(PRETO)
-            text = self.font.render(f"Player {self.winner} Venceu!", True, BRANCO)
-            text_rect = text.get_rect(center=(self.largura//2, self.altura//2))
+            
+            # Texto principal
+            if self.final:
+                main_text = f"JOGADOR {self.winner.upper()} VENCEU O JOGO!"
+            else:
+                main_text = f"JOGADOR {self.winner.upper()} VENCEU A RODADA!"
+            
+            text = self.font.render(main_text, True, DOURADO)
+            text_rect = text.get_rect(center=(self.largura//2, self.altura//2 - 50))
             self.screen.blit(text, text_rect)
             
-            instruction = self.font.render("Pressione R para recomeçar ou Q para sair", True, BRANCO)
-            instruction_rect = instruction.get_rect(center=(self.largura//2, self.altura//2 + 50))
-            self.screen.blit(instruction, instruction_rect)
+            # Placar
+            score_text = self.font.render(
+                f"PLACAR: Jogador 1 - {self.p1_score}  |  Jogador 2 - {self.p2_score}", 
+                True, BRANCO
+            )
+            score_rect = score_text.get_rect(center=(self.largura//2, self.altura//2 + 20))
+            self.screen.blit(score_text, score_rect)
+            
+            # Instruções
+            if self.final:
+                instruction = "Pressione R para recomeçar ou Q para sair"
+            else:
+                instruction = "Pressione qualquer tecla para a próxima rodada..."
+            
+            instr_text = self.font.render(instruction, True, BRANCO)
+            instr_rect = instr_text.get_rect(center=(self.largura//2, self.altura//2 + 100))
+            self.screen.blit(instr_text, instr_rect)
             
             pygame.display.flip()
             
@@ -538,11 +571,14 @@ class VictoryScreen:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r:
-                        return 'restart'
-                    elif event.key == pygame.K_q:
-                        pygame.quit()
-                        sys.exit()
+                    if self.final:
+                        if event.key == pygame.K_r:
+                            return 'restart'
+                        elif event.key == pygame.K_q:
+                            pygame.quit()
+                            sys.exit()
+                    else:
+                        return 'continue'
             
             clock.tick(60)
 
@@ -552,32 +588,62 @@ class Game:
         self.screen_width = 1300
         self.screen_height = 638
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
+        pygame.key.set_repeat()
         pygame.display.set_caption("Guerra por Sintra")
         self.font = pygame.font.Font(None, 36)
-        
+        self.p1_score = 0
+        self.p2_score = 0
+
     def run(self):
         while True:
+            # Tela inicial e seleção de classe
             splash = SplashScreen(self.screen, self.font, self.screen_width, self.screen_height)
             splash.run()
             class_selection = ClassSelectionScreen(self.font)
             class_selection.run()
-            TILES = (
-                pygame.image.load("assets/Tiles/tile0.png").convert_alpha(),
-                pygame.image.load("assets/Tiles/tile1.png").convert_alpha(),
-                pygame.image.load("assets/Tiles/tile2.png").convert_alpha(),
-                pygame.image.load("assets/Tiles/tile3.png").convert_alpha(),
-                pygame.image.load("assets/Tiles/tile4.png").convert_alpha(),
-                pygame.image.load("assets/Tiles/tile5.png").convert_alpha(),
-                pygame.image.load("assets/Tiles/tile6.png").convert_alpha()
-            )
-            world = World(SIZE_X, SIZE_Y, TILES, TILE_SIZE, self.screen, SCALE, 
-                          class_selection.selected_p1, class_selection.selected_p2, self.font)
-            winner = world.draw_map()
-            if winner is not None:
-                victory_screen = VictoryScreen(self.screen, self.font, winner)
+            
+            # Resetar pontuações a cada novo jogo
+            self.p1_score = 0
+            self.p2_score = 0
+            
+            while True:  # Loop principal de rodadas
+                # Criar novo mundo para cada rodada
+                TILES = (
+                    pygame.image.load("assets/Tiles/tile0.png").convert_alpha(),
+                    pygame.image.load("assets/Tiles/tile1.png").convert_alpha(),
+                    pygame.image.load("assets/Tiles/tile2.png").convert_alpha(),
+                    pygame.image.load("assets/Tiles/tile3.png").convert_alpha(),
+                    pygame.image.load("assets/Tiles/tile4.png").convert_alpha(),
+                    pygame.image.load("assets/Tiles/tile5.png").convert_alpha(),
+                    pygame.image.load("assets/Tiles/tile6.png").convert_alpha()
+                )
+                world = World(SIZE_X, SIZE_Y, TILES, TILE_SIZE, self.screen, SCALE, 
+                             class_selection.selected_p1, class_selection.selected_p2, self.font)
+                
+                # Executar batalha e verificar vencedor
+                winner = world.draw_map()
+                
+                # Atualizar pontuação
+                if winner == "p1":
+                    self.p1_score += 1
+                else:
+                    self.p2_score += 1
+                
+                # Verificar vitória final
+                final_victory = self.p1_score >= 2 or self.p2_score >= 2
+                
+                # Mostrar tela de vitória
+                victory_screen = VictoryScreen(self.screen, self.font, winner, 
+                                              self.p1_score, self.p2_score, final_victory)
                 result = victory_screen.run()
-                if result != 'restart':
-                    break
+                
+                # Reiniciar ou sair
+                if final_victory:
+                    if result == 'restart':
+                        break  # Volta para o menu inicial
+                    else:
+                        pygame.quit()
+                        sys.exit()
 
 if __name__ == "__main__":
     jogo = Game()

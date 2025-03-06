@@ -6,15 +6,15 @@ import random
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # Definições globais de cores e tamanhos
-VERDE    = (0, 255, 0)
+VERDE = (0, 255, 0)
 CINZENTO = (128, 128, 128)
-DOURADO  = (218, 165, 32)
-PRETO    = (0, 0, 0)
-BRANCO   = (255, 255, 255)
+DOURADO = (218, 165, 32)
+PRETO = (0, 0, 0)
+BRANCO = (255, 255, 255)
 TILE_SIZE = 32
-SIZE_X    = 7
-SIZE_Y    = 7
-SCALE     = 2
+SIZE_X = 7
+SIZE_Y = 7
+SCALE = 2
 
 # -------------------- Classes de Interface --------------------
 class BotaoIcone:
@@ -136,6 +136,14 @@ class ClassSelectionScreen:
                                          "assets/Classes/confirm_button.png", "Confirmar", 
                                          lambda p, c: self.confirm_selection(), "confirm")
 
+        # Stats para tooltip
+        self.stats = {
+            "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 3},
+            "Raposa": {"Vida": 100, "Ataque": 10, "Movimento": 2},
+            "Veado": {"Vida": 120, "Ataque": 12, "Movimento": 1}
+        }
+        self.hovered_class = None
+
     def update_confirm_status(self):
         self.confirm_enabled = (self.selected_p1 is not None) and (self.selected_p2 is not None)
 
@@ -148,8 +156,32 @@ class ClassSelectionScreen:
 
     def confirm_selection(self):
         if self.confirm_enabled:
-            print(f"Jogador 1: {self.selected_p1}, Jogador 2: {self.selected_p2}")
             self.running = False
+
+    def draw_tooltip(self):
+        if self.hovered_class:
+            stats = self.stats[self.hovered_class]
+            tooltip_width = 200
+            tooltip_height = 110
+            x, y = pygame.mouse.get_pos()
+            x += 20
+            y += 20
+            
+            # Fundo do tooltip
+            tooltip_surface = pygame.Surface((tooltip_width, tooltip_height), pygame.SRCALPHA)
+            tooltip_surface.fill((0, 0, 0, 150))
+            
+            # Texto
+            title = self.font.render(self.hovered_class, True, BRANCO)
+            tooltip_surface.blit(title, (10, 5))
+            
+            y_offset = 30
+            for key, value in stats.items():
+                text = self.font.render(f"{key}: {value}", True, BRANCO)
+                tooltip_surface.blit(text, (10, y_offset))
+                y_offset += 25
+            
+            self.screen.blit(tooltip_surface, (x, y))
 
     def run(self):
         self.running = True
@@ -162,33 +194,45 @@ class ClassSelectionScreen:
             self.screen.blit(text_p1, text_p1.get_rect(center=(self.largura//2, 75)))
             text_p2 = self.font.render("Player 2", True, BRANCO)
             self.screen.blit(text_p2, text_p2.get_rect(center=(self.largura//2, 325)))
+            
+            # Verificar hover
+            mouse_pos = pygame.mouse.get_pos()
+            self.hovered_class = None
+            for btn in self.buttons_p1 + self.buttons_p2:
+                if btn.rect.collidepoint(mouse_pos):
+                    self.hovered_class = btn.class_name
+
             for btn in self.buttons_p1 + self.buttons_p2:
                 btn.selected = ((self.selected_p1 == btn.class_name and btn.player == "p1") or 
                                 (self.selected_p2 == btn.class_name and btn.player == "p2"))
                 btn.draw(self.screen)
+            
             self.confirm_button.image.set_alpha(255 if self.confirm_enabled else 128)
             self.confirm_button.draw(self.screen)
+            
+            self.draw_tooltip()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
                 for btn in self.buttons_p1 + self.buttons_p2 + [self.confirm_button]:
                     btn.handle_event(event)
+                if event.type == pygame.MOUSEMOTION:
+                    pass  # Atualizado no loop principal
+                    
             pygame.display.flip()
             clock.tick(60)
 
 # -------------------- Classes de Jogo --------------------
-# A classe Player agora possui atributos para alcance (move_range) e pontos de movimento (moves_remaining),
-# e o movimento é opcional. Além disso, há uma opção de ataque que, quando acionada, ataca todos os inimigos
-# num raio de 1 tile.
 class Player:
-    def __init__(self, image_path, start_grid_pos, speed, scale=1, class_name="Lebre"):
+    def __init__(self, image_path, start_grid_pos, speed, scale=1, class_name="Lebre", font=None):
         try:
             full_image = pygame.image.load(image_path).convert_alpha()
         except pygame.error:
             full_image = pygame.Surface((TILE_SIZE * scale, TILE_SIZE * scale))
             full_image.fill(VERDE)
-        self.sprite_scale_factor = scale
+        self.sprite_scale_factor = scale * 0.45
         sprite_size = int(TILE_SIZE * scale * self.sprite_scale_factor)
         self.image = pygame.transform.scale(full_image, (sprite_size, sprite_size))
         self.sprite_width = sprite_size
@@ -201,21 +245,31 @@ class Player:
         self.dest_grid_y = self.grid_y
         self.moving = False
         self.speed = speed  # velocidade em pixels por ms
-        self.health = 100
 
+        # Configurações baseadas na classe
+        health_dict = {"Lebre": 80, "Raposa": 100, "Veado": 120}
+        attack_dict = {"Lebre": 8, "Raposa": 10, "Veado": 12}
         move_range_dict = {"Lebre": 3, "Raposa": 2, "Veado": 1}
+        
+        self.health = health_dict.get(class_name, 1000)
+        self.attack_damage = attack_dict.get(class_name, 50)
         self.move_range = move_range_dict.get(class_name, 1)
         self.moves_remaining = self.move_range
         self.class_name = class_name
 
-    def handle_input(self, keys, controls, grid_width, grid_height):
-        # Permite movimento somente se houver pontos de movimento
+        # Sistema de dano
+        self.font = font if font else pygame.font.Font(None, 24)
+        self.last_damage = 0
+        self.damage_display_time = 0
+
+    def handle_input(self, keys, controls, grid_width, grid_height, other_player_pos):
         if not self.moving and self.moves_remaining > 0:
             for key, (dx, dy) in controls.items():
                 if keys[key]:
                     new_grid_x = self.grid_x + dx
                     new_grid_y = self.grid_y + dy
-                    if 0 <= new_grid_x < grid_width and 0 <= new_grid_y < grid_height:
+                    if (0 <= new_grid_x < grid_width and 0 <= new_grid_y < grid_height
+                        and (new_grid_x, new_grid_y) != other_player_pos):
                         self.dest_grid_x = new_grid_x
                         self.dest_grid_y = new_grid_y
                         self.moving = True
@@ -243,6 +297,10 @@ class Player:
                 self.moving = False
                 if self.moves_remaining > 0:
                     self.moves_remaining -= 1
+        
+        # Atualizar tempo de exibição de dano
+        if self.damage_display_time > 0:
+            self.damage_display_time = max(0, self.damage_display_time - dt)
 
     def draw(self, display, offset_x, offset_y):
         tile_pixel_size = TILE_SIZE * SCALE
@@ -253,6 +311,13 @@ class Player:
         sprite_draw_x = tile_center_x - self.sprite_width / 2
         sprite_draw_y = tile_center_y - self.sprite_height / 2
         display.blit(self.image, (sprite_draw_x, sprite_draw_y))
+        
+        # Exibir dano
+        if self.damage_display_time > 0:
+            damage_text = self.font.render(f"-{self.last_damage}", True, (255, 0, 0))
+            text_rect = damage_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
+            display.blit(damage_text, text_rect)
+        
         self.draw_health_bar(display, tile_center_x, sprite_draw_y + self.sprite_height)
 
     def draw_health_bar(self, display, center_x, sprite_bottom_y):
@@ -265,25 +330,50 @@ class Player:
         pygame.draw.rect(display, CINZENTO, (x, y, bar_width, bar_height))
         pygame.draw.rect(display, VERDE, (x, y, fill, bar_height))
 
-# A opção de ataque: ataca tudo num tile de raio 1
 def attack(attacker, defender):
-    # Se o inimigo estiver a 1 tile (incluindo diagonais)
     if abs(attacker.grid_x - defender.grid_x) <= 1 and abs(attacker.grid_y - defender.grid_y) <= 1:
-        damage = 10
+        damage = attacker.attack_damage
         defender.health -= damage
+        defender.last_damage = damage
+        defender.damage_display_time = 2000  # 2 segundos
+        
         if defender.health < 0:
             defender.health = 0
-        print(f"{attacker.class_name} atacou {defender.class_name}! HP do defensor: {defender.health}")
 
-# Classe World – gerencia o mapa, os jogadores e as ações de movimento/ataque
+        # Knockback
+        delta_x = defender.grid_x - attacker.grid_x
+        delta_y = defender.grid_y - attacker.grid_y
+
+        knockback_x = 0
+        knockback_y = 0
+        if delta_x != 0:
+            knockback_x = 1 if delta_x > 0 else -1
+        if delta_y != 0:
+            knockback_y = 1 if delta_y > 0 else -1
+
+        new_x = defender.grid_x + knockback_x
+        new_y = defender.grid_y + knockback_y
+
+        if 0 <= new_x < SIZE_X and 0 <= new_y < SIZE_Y:
+            if (new_x, new_y) != (attacker.grid_x, attacker.grid_y):
+                defender.grid_x = new_x
+                defender.grid_y = new_y
+                defender.dest_grid_x = new_x
+                defender.dest_grid_y = new_y
+                defender.pixel_x = new_x * TILE_SIZE * SCALE
+                defender.pixel_y = new_y * TILE_SIZE * SCALE
+                defender.moving = False
+
 class World:
-    def __init__(self, x, y, tilepack, tilesize, display, scale, player1_class, player2_class):
+    def __init__(self, x, y, tilepack, tilesize, display, scale, player1_class, player2_class, font):
         self.x = x
         self.y = y
         self.tilesize = tilesize
         self.display = display
         self.scale = scale
         self.mapa = []
+        self.screen_width = display.get_width()
+        self.screen_height = display.get_height()
         try:
             self.bg_image = pygame.image.load("assets/World/Background.jpg").convert()
             self.bg_image = pygame.transform.scale(self.bg_image, self.display.get_size())
@@ -304,57 +394,66 @@ class World:
         }
         pos1 = (0, 0)
         pos2 = (self.x - 1, self.y - 1)
-        self.player1 = Player(self.player_images.get(player1_class, "assets/Classes/lebre_icon.png"), pos1, speed=0.5, scale= self.scale * 0.70, class_name=player1_class)
-        self.player2 = Player(self.player_images.get(player2_class, "assets/Classes/lebre_icon.png"), pos2, speed=0.5, scale= self.scale * 0.70, class_name=player2_class)
+        self.player1 = Player(self.player_images.get(player1_class, "assets/Classes/lebre_icon.png"), 
+                             pos1, speed=0.5, scale= self.scale, 
+                             class_name=player1_class, font=font)
+        self.player2 = Player(self.player_images.get(player2_class, "assets/Classes/lebre_icon.png"), 
+                             pos2, speed=0.5, scale= self.scale, 
+                             class_name=player2_class, font=font)
         self.current_turn = "p1"
         self.player1.moves_remaining = self.player1.move_range
         self.player2.moves_remaining = self.player2.move_range
+        
+        # Efeitos sonoros
+        try:
+            self.attack_sound = pygame.mixer.Sound("assets/Sounds/attack.wav")
+        except:
+            self.attack_sound = None
+        
+        pygame.mixer.music.load("assets/Sounds/song_batalha.wav")
+        pygame.mixer.music.play(-1)
 
     def draw_map(self):
-        display_width, display_height = self.display.get_size()
-        map_width = self.x * self.tilesize * self.scale
-        map_height = self.y * self.tilesize * self.scale
-        offset_x = (display_width - map_width) // 2
-        offset_y = (display_height - map_height) // 2
-
+        winner = None
         running = True
         clock = pygame.time.Clock()
         player1_controls = {pygame.K_w: (0, -1), pygame.K_a: (-1, 0), pygame.K_s: (0, 1), pygame.K_d: (1, 0)}
         player2_controls = {pygame.K_UP: (0, -1), pygame.K_LEFT: (-1, 0), pygame.K_DOWN: (0, 1), pygame.K_RIGHT: (1, 0)}
         font = pygame.font.Font(None, 36)
+        controls_font = pygame.font.Font(None, 24)
 
         while running:
             dt = clock.tick(60)  # dt em ms
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                    pygame.quit()
+                    sys.exit()
                 elif event.type == pygame.KEYDOWN:
-                    # Pressione RETURN para terminar o turno sem mover
                     if event.key == pygame.K_RETURN:
                         if self.current_turn == "p1":
                             self.player1.moves_remaining = 0
                         else:
                             self.player2.moves_remaining = 0
-                    # Pressione SPACE para atacar
                     elif event.key == pygame.K_SPACE:
                         if self.current_turn == "p1":
                             attack(self.player1, self.player2)
-                            self.player1.moves_remaining = 0
                         else:
                             attack(self.player2, self.player1)
-                            self.player2.moves_remaining = 0
+                        if self.attack_sound:
+                            self.attack_sound.play()
 
             keys = pygame.key.get_pressed()
             if self.current_turn == "p1":
-                self.player1.handle_input(keys, player1_controls, self.x, self.y)
+                other_pos = (self.player2.grid_x, self.player2.grid_y)
+                self.player1.handle_input(keys, player1_controls, self.x, self.y, other_pos)
             else:
-                self.player2.handle_input(keys, player2_controls, self.x, self.y)
+                other_pos = (self.player1.grid_x, self.player1.grid_y)
+                self.player2.handle_input(keys, player2_controls, self.x, self.y, other_pos)
 
             self.player1.update(dt)
             self.player2.update(dt)
 
-            # Se o jogador ativo concluiu o movimento ou escolheu terminar o turno,
-            # alterna turno e reseta os pontos de movimento do próximo jogador.
             if self.current_turn == "p1" and not self.player1.moving:
                 if self.player1.moves_remaining == 0:
                     self.current_turn = "p2"
@@ -364,10 +463,24 @@ class World:
                     self.current_turn = "p1"
                     self.player1.moves_remaining = self.player1.move_range
 
+            # Verificar vitória
+            if self.player1.health <= 0:
+                winner = "p2"
+                running = False
+            elif self.player2.health <= 0:
+                winner = "p1"
+                running = False
+
             if self.bg_image:
                 self.display.blit(self.bg_image, (0, 0))
             else:
                 self.display.fill(PRETO)
+
+            display_width, display_height = self.display.get_size()
+            map_width = self.x * self.tilesize * self.scale
+            map_height = self.y * self.tilesize * self.scale
+            offset_x = (display_width - map_width) // 2
+            offset_y = (display_height - map_height) // 2
 
             for y_idx, row in enumerate(self.mapa):
                 for x_idx, tile in enumerate(row):
@@ -381,11 +494,58 @@ class World:
             turn_text = font.render(f"Turn: {self.current_turn}", True, BRANCO)
             self.display.blit(turn_text, (10, 10))
 
-            pygame.display.flip()
-        pygame.quit()
-        sys.exit()
+            # Legenda de controles
+            space_text = controls_font.render("Espaço para atacar", True, BRANCO)
+            enter_text = controls_font.render("Enter para passar turno", True, BRANCO)
+            self.display.blit(space_text, (10, self.screen_height - 60))
+            self.display.blit(enter_text, (10, self.screen_height - 30))
 
-# Classe principal do jogo
+            pygame.display.flip()
+        
+        pygame.mixer.music.stop()
+        return winner
+
+class VictoryScreen:
+    def __init__(self, screen, font, winner):
+        self.screen = screen
+        self.font = font
+        self.winner = winner
+        self.largura = screen.get_width()
+        self.altura = screen.get_height()
+        try:
+            pygame.mixer.music.load("assets/Sounds/victory_sound.wav")
+            pygame.mixer.music.play(-1)
+        except:
+            pass
+
+    def run(self):
+        running = True
+        clock = pygame.time.Clock()
+        while running:
+            self.screen.fill(PRETO)
+            text = self.font.render(f"Player {self.winner} Venceu!", True, BRANCO)
+            text_rect = text.get_rect(center=(self.largura//2, self.altura//2))
+            self.screen.blit(text, text_rect)
+            
+            instruction = self.font.render("Pressione R para recomeçar ou Q para sair", True, BRANCO)
+            instruction_rect = instruction.get_rect(center=(self.largura//2, self.altura//2 + 50))
+            self.screen.blit(instruction, instruction_rect)
+            
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:
+                        return 'restart'
+                    elif event.key == pygame.K_q:
+                        pygame.quit()
+                        sys.exit()
+            
+            clock.tick(60)
+
 class Game:
     def __init__(self):
         pygame.init()
@@ -396,22 +556,28 @@ class Game:
         self.font = pygame.font.Font(None, 36)
         
     def run(self):
-        splash = SplashScreen(self.screen, self.font, self.screen_width, self.screen_height)
-        splash.run()
-        class_selection = ClassSelectionScreen(self.font)
-        class_selection.run()
-        TILES = (
-            pygame.image.load("assets/Tiles/tile0.png").convert_alpha(),
-            pygame.image.load("assets/Tiles/tile1.png").convert_alpha(),
-            pygame.image.load("assets/Tiles/tile2.png").convert_alpha(),
-            pygame.image.load("assets/Tiles/tile3.png").convert_alpha(),
-            pygame.image.load("assets/Tiles/tile4.png").convert_alpha(),
-            pygame.image.load("assets/Tiles/tile5.png").convert_alpha(),
-            pygame.image.load("assets/Tiles/tile6.png").convert_alpha()
-        )
-        world = World(SIZE_X, SIZE_Y, TILES, TILE_SIZE, self.screen, SCALE, 
-                      class_selection.selected_p1, class_selection.selected_p2)
-        world.draw_map()
+        while True:
+            splash = SplashScreen(self.screen, self.font, self.screen_width, self.screen_height)
+            splash.run()
+            class_selection = ClassSelectionScreen(self.font)
+            class_selection.run()
+            TILES = (
+                pygame.image.load("assets/Tiles/tile0.png").convert_alpha(),
+                pygame.image.load("assets/Tiles/tile1.png").convert_alpha(),
+                pygame.image.load("assets/Tiles/tile2.png").convert_alpha(),
+                pygame.image.load("assets/Tiles/tile3.png").convert_alpha(),
+                pygame.image.load("assets/Tiles/tile4.png").convert_alpha(),
+                pygame.image.load("assets/Tiles/tile5.png").convert_alpha(),
+                pygame.image.load("assets/Tiles/tile6.png").convert_alpha()
+            )
+            world = World(SIZE_X, SIZE_Y, TILES, TILE_SIZE, self.screen, SCALE, 
+                          class_selection.selected_p1, class_selection.selected_p2, self.font)
+            winner = world.draw_map()
+            if winner is not None:
+                victory_screen = VictoryScreen(self.screen, self.font, winner)
+                result = victory_screen.run()
+                if result != 'restart':
+                    break
 
 if __name__ == "__main__":
     jogo = Game()
