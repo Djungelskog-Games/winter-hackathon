@@ -1,8 +1,8 @@
 import pygame
 import sys
 import os
-import random
 import math
+import random
 
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
@@ -12,26 +12,29 @@ CINZENTO = (128, 128, 128)
 DOURADO = (218, 165, 32)
 PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
+VERMELHO = (255, 0, 0, 50)
 TILE_SIZE = 32
 SIZE_X = 7
 SIZE_Y = 7
 SCALE = 2
 
-# Lista de Powerups
 POWERUPS = [
-    {'type': 'health', 'name': 'Health Boost', 'description': '+20 Vida Máxima', 'value': 20},
-    {'type': 'attack', 'name': 'Boost de Mouro', 'description': '+3 Ataque', 'value': 3},
-    {'type': 'move_range', 'name': 'Movement Boost', 'description': '+1 Movimento', 'value': 1},
-    {'type': 'speed', 'name': 'Speed Boost', 'description': '+0.2 Velocidade', 'value': 0.2},
-    {'type': 'regeneration', 'name': 'Queijada Mágica', 'description': 'Cura 5 por turno', 'value': 5}
+    {'type': 'health', 'name': ' Queijada Especial', 'description': '+20 Vida Máxima', 'value': 20},
+    {'type': 'attack', 'name': 'Travesseiro Mágico', 'description': '+3 Ataque', 'value': 3},
+    {'type': 'move_range', 'name': 'Faca da Chinada', 'description': '+1 Movimento', 'value': 1},
+    {'type': 'attack_range', 'name': 'Pedra da Calçada', 'description': '+1 Alcance de Ataque', 'value': 1},
+    {'type': 'regeneration', 'name': 'Betty', 'description': 'Cura 5 por turno', 'value': 5}
 ]
 
+pygame.mixer.init()
 SOUNDS = {'vencer': pygame.mixer.Sound('assets/Sounds/vencer.wav'),
            'morrer': pygame.mixer.Sound('assets/Sounds/morrer.wav'),
-           'ataque_raposa': pygame.mixer.Sound('assets/Sounds/raposa_ataque.wav'),
-           'ataque_veado': pygame.mixer.Sound('assets/Sounds/veado_ataque.wav'),
-           'ataque_lebre': pygame.mixer.Sound('assets/Sounds/lebre_ataque.wav'),
-           'ataque_urso': pygame.mixer.Sound('assets/Sounds/urso_ataque.wav')}
+           'butao': pygame.mixer.Sound('assets/Sounds/clicar_butao.wav'),
+           'powerup': pygame.mixer.Sound('assets/Sounds/apanhar_powerup.wav'),
+           'Raposa': pygame.mixer.Sound('assets/Sounds/raposa_ataque.wav'),
+           'Veado': pygame.mixer.Sound('assets/Sounds/veado_ataque.wav'),
+           'Lebre': pygame.mixer.Sound('assets/Sounds/lebre_ataque.wav'),
+           'Urso': pygame.mixer.Sound('assets/Sounds/urso_ataque.wav')}
 
 # -------------------- Classes de Interface --------------------
 class BotaoIcone:
@@ -98,8 +101,8 @@ class SplashScreen:
             overlay_rect2 = overlay_image2.get_rect(center=(self.largura // 2, 250))
 
         # Configurações da animação
-        amplitude = 5  # Altura do movimento em pixels
-        velocidade = 0.05  # Velocidade da animação
+        amplitude = 10  # Altura do movimento em pixels
+        velocidade = 0.04  # Velocidade da animação
         angulo = 0
         clock = pygame.time.Clock()
 
@@ -126,10 +129,11 @@ class SplashScreen:
                 if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     pygame.mixer.music.stop()
                     return
-                
+
 class ClassSelectionScreen:
     def __init__(self, font):
-        self.largura = 800
+        SOUNDS['butao'].play()
+        self.largura = 1000
         self.altura = 700
         self.font = font
         self.selected_p1 = None
@@ -254,6 +258,7 @@ class ClassSelectionScreen:
 
 class PowerupButton:
     def __init__(self, x, y, width, height, powerup, callback):
+        SOUNDS['powerup'].play()
         self.rect = pygame.Rect(x, y, width, height)
         self.powerup = powerup
         self.callback = callback
@@ -352,17 +357,19 @@ class Player:
         health_dict = {"Lebre": 80, "Raposa": 100, "Veado": 120}
         attack_dict = {"Lebre": 8, "Raposa": 10, "Veado": 12}
         move_range_dict = {"Lebre": 4, "Raposa": 3, "Veado": 2}
+        attack_range_dict = {"Lebre": 1, "Raposa": 1, "Veado": 1}
         
         self.base_health = health_dict[class_name]
         self.base_attack = attack_dict[class_name]
         self.base_move_range = move_range_dict[class_name]
+        self.base_attack_range = attack_range_dict[class_name]
         self.base_speed = speed
 
         # Aplicar powerups
         self.max_health = self.base_health
         self.attack_damage = self.base_attack
         self.move_range = self.base_move_range
-        self.speed = self.base_speed
+        self.attack_range = self.base_attack_range
         self.regeneration = 0
 
         for p in (powerups or []):
@@ -372,8 +379,8 @@ class Player:
                 self.attack_damage += p['value']
             elif p['type'] == 'move_range':
                 self.move_range += p['value']
-            elif p['type'] == 'speed':
-                self.speed += p['value']
+            elif p['type'] == 'attack_range':
+                self.attack_range += p['value']
             elif p['type'] == 'regeneration':
                 self.regeneration += p['value']
 
@@ -437,21 +444,10 @@ class Player:
             damage_text = self.font.render(f"-{self.last_damage}", True, (255, 0, 0))
             text_rect = damage_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
             display.blit(damage_text, text_rect)
-        
-        self.draw_health_bar(display, tile_center_x, sprite_draw_y + self.sprite_height)
 
-    def draw_health_bar(self, display, center_x, sprite_bottom_y):
-        bar_width = 50
-        bar_height = 5
-        margin = 5
-        fill = (self.health / self.max_health) * bar_width if self.max_health > 0 else 0
-        x = center_x - bar_width / 2
-        y = sprite_bottom_y + margin
-        pygame.draw.rect(display, CINZENTO, (x, y, bar_width, bar_height))
-        pygame.draw.rect(display, VERDE, (x, y, fill, bar_height))
-
-def attack(attacker, defender, reach=1):
-    if abs(attacker.grid_x - defender.grid_x) <= reach and abs(attacker.grid_y - defender.grid_y) <= reach:
+def attack(attacker, defender):
+    SOUNDS[attacker.class_name].play()
+    if abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range:
         damage = attacker.attack_damage
         defender.health -= damage
         defender.last_damage = damage
@@ -485,6 +481,7 @@ def attack(attacker, defender, reach=1):
 
 class World:
     def __init__(self, x, y, tilepack, tilesize, display, scale, player1_class, player2_class, font, p1_powerups=None, p2_powerups=None):
+        SOUNDS['butao'].play()
         self.x = x
         self.y = y
         self.tilesize = tilesize
@@ -524,13 +521,84 @@ class World:
         self.player1.moves_remaining = self.player1.move_range
         self.player2.moves_remaining = self.player2.move_range
         
-        try:
-            self.attack_sound = pygame.mixer.Sound("assets/Sounds/attack.wav")
-        except:
-            self.attack_sound = None
         
         pygame.mixer.music.load("assets/Sounds/song_batalha.wav")
         pygame.mixer.music.play(-1)
+
+    def draw_attack_range(self, offset_x, offset_y):
+        overlay = pygame.Surface((self.x * TILE_SIZE * SCALE, self.y * TILE_SIZE * SCALE), pygame.SRCALPHA)
+        
+        current_player = self.player1 if self.current_turn == "p1" else self.player2
+        attack_range = current_player.attack_range
+        px, py = current_player.grid_x, current_player.grid_y
+
+        for dx in range(-attack_range, attack_range + 1):
+            for dy in range(-attack_range, attack_range + 1):
+                if abs(dx) + abs(dy) <= attack_range:
+                    x = px + dx
+                    y = py + dy
+                    if 0 <= x < self.x and 0 <= y < self.y:
+                        pos_x = x * TILE_SIZE * SCALE
+                        pos_y = y * TILE_SIZE * SCALE
+                        pygame.draw.rect(overlay, VERMELHO, (pos_x, pos_y, TILE_SIZE*SCALE, TILE_SIZE*SCALE))
+
+        self.display.blit(overlay, (offset_x, offset_y))
+
+    def draw_player_stats(self, display, offset_x, offset_y, player, side):
+        panel_width = 200
+        panel_height = 250
+        spacing = 20
+        
+        if side == "left":
+            panel_x = offset_x - panel_width - spacing
+        else:
+            panel_x = offset_x + (self.x * self.tilesize * self.scale) + spacing
+            
+        panel_y = offset_y + 50
+        
+        # Fundo do painel
+        pygame.draw.rect(display, DOURADO, (panel_x, panel_y, panel_width, panel_height), border_radius=10)
+        pygame.draw.rect(display, PRETO, (panel_x+2, panel_y+2, panel_width-4, panel_height-4), border_radius=8)
+        
+        # Sprite do jogador
+        sprite = pygame.transform.scale(player.image, (100, 100))
+        display.blit(sprite, (panel_x + (panel_width-100)//2, panel_y + 10))
+        
+        # Stats
+        stats_font = pygame.font.Font(None, 24)
+        y_offset = 120
+        
+        # Ataque
+        attack_text = stats_font.render(f"Ataque: {player.attack_damage}", True, BRANCO)
+        display.blit(attack_text, (panel_x + 20, panel_y + y_offset))
+        y_offset += 30
+        
+        # Movimento
+        move_text = stats_font.render(f"Movimento: {player.move_range}", True, BRANCO)
+        display.blit(move_text, (panel_x + 20, panel_y + y_offset))
+        y_offset += 30
+        
+        # Alcance
+        range_text = stats_font.render(f"Alcance: {player.attack_range}", True, BRANCO)
+        display.blit(range_text, (panel_x + 20, panel_y + y_offset))
+        y_offset += 30
+        
+        # Barra de vida
+        health_width = 160
+        health_height = 20
+        health_x = panel_x + (panel_width - health_width)//2
+        health_y = panel_y + y_offset
+        
+        # Fundo da barra
+        pygame.draw.rect(display, CINZENTO, (health_x, health_y, health_width, health_height))
+        # Vida atual
+        fill_width = (player.health / player.max_health) * health_width
+        pygame.draw.rect(display, VERDE, (health_x, health_y, fill_width, health_height))
+        
+        # Texto da vida
+        health_text = stats_font.render(f"{player.health}/{player.max_health}", True, BRANCO)
+        text_rect = health_text.get_rect(center=(health_x + health_width//2, health_y + health_height//2))
+        display.blit(health_text, text_rect)
 
     def draw_map(self):
         winner = None
@@ -559,10 +627,9 @@ class World:
                             attack(self.player1, self.player2)
                         else:
                             attack(self.player2, self.player1)
-                        if self.attack_sound:
-                            self.attack_sound.play()
                     else:
                         self.key = event.key
+                        SOUNDS['butao'].play()
 
             if self.current_turn == "p1":
                 other_pos = (self.player2.grid_x, self.player2.grid_y)
@@ -588,9 +655,11 @@ class World:
                     self.player1.moves_remaining = self.player1.move_range
 
             if self.player1.health <= 0:
+                SOUNDS['morrer'].play()
                 winner = "p2"
                 running = False
             elif self.player2.health <= 0:
+                SOUNDS['morrer'].play()
                 winner = "p1"
                 running = False
 
@@ -611,6 +680,12 @@ class World:
                     pos_y_tile = offset_y + y_idx * self.tilesize * self.scale
                     self.display.blit(tile, (pos_x_tile, pos_y_tile))
 
+            self.draw_attack_range(offset_x, offset_y)
+
+            # Desenha stats dos jogadores
+            self.draw_player_stats(self.display, offset_x, offset_y, self.player1, "left")
+            self.draw_player_stats(self.display, offset_x, offset_y, self.player2, "right")
+
             self.player1.draw(self.display, offset_x, offset_y)
             self.player2.draw(self.display, offset_x, offset_y)
 
@@ -629,6 +704,7 @@ class World:
 
 class VictoryScreen:
     def __init__(self, screen, font, winner, p1_score, p2_score, final=False):
+        SOUNDS['vencer'].play()
         self.screen = screen
         self.font = font
         self.winner = winner
@@ -745,7 +821,7 @@ class Game:
                     self.p2_score += 1
                     loser = "p1"
                 
-                final_victory = self.p1_score >= 4 or self.p2_score >= 4
+                final_victory = self.p1_score >= 2 or self.p2_score >= 2
                 
                 victory_screen = VictoryScreen(self.screen, self.font, winner, 
                                               self.p1_score, self.p2_score, final_victory)

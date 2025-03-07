@@ -16,9 +16,26 @@ SIZE_X = 7
 SIZE_Y = 7
 SCALE = 2
 
+# Lista de Powerups atualizada
+POWERUPS = [
+    {'type': 'health', 'name': 'Health Boost', 'description': '+20 Vida Máxima', 'value': 20},
+    {'type': 'attack', 'name': 'Attack Boost', 'description': '+3 Ataque', 'value': 3},
+    {'type': 'move_range', 'name': 'Movement Boost', 'description': '+1 Movimento', 'value': 1},
+    {'type': 'attack_range', 'name': 'Longo Alcance', 'description': '+1 Alcance de Ataque', 'value': 1},
+    {'type': 'regeneration', 'name': 'Regeneration', 'description': 'Cura 5 por turno', 'value': 5}
+]
+
+pygame.mixer.init()
+SOUNDS = {'vencer': pygame.mixer.Sound('assets/Sounds/vencer.wav'),
+           'morrer': pygame.mixer.Sound('assets/Sounds/morrer.wav'),
+           'butao': pygame.mixer.Sound('assets/Sounds/clicar_butao.wav'),
+           'ataque_raposa': pygame.mixer.Sound('assets/Sounds/raposa_ataque.wav'),
+           'ataque_veado': pygame.mixer.Sound('assets/Sounds/veado_ataque.wav'),
+           'ataque_lebre': pygame.mixer.Sound('assets/Sounds/lebre_ataque.wav'),
+           'ataque_urso': pygame.mixer.Sound('assets/Sounds/urso_ataque.wav')}
 # -------------------- Classes de Interface --------------------
 class BotaoIcone:
-    def __init__(self, x, y, image_path, class_name, callback, player, size = (150, 150)):
+    def __init__(self, x, y, image_path, class_name, callback, player, size=(150, 150)):
         try:
             self.image = pygame.image.load(image_path).convert_alpha()
             self.image = pygame.transform.scale(self.image, size)
@@ -136,7 +153,6 @@ class ClassSelectionScreen:
                                          "assets/Classes/confirm_button.png", "Confirmar", 
                                          lambda p, c: self.confirm_selection(), "confirm", (700, 90))
 
-        # Stats para tooltip
         self.stats = {
             "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 4},
             "Raposa": {"Vida": 100, "Ataque": 10, "Movimento": 3},
@@ -167,11 +183,9 @@ class ClassSelectionScreen:
             x += 20
             y += 20
             
-            # Fundo do tooltip
             tooltip_surface = pygame.Surface((tooltip_width, tooltip_height), pygame.SRCALPHA)
             tooltip_surface.fill((0, 0, 0, 150))
             
-            # Texto
             title = self.font.render(self.hovered_class, True, BRANCO)
             tooltip_surface.blit(title, (10, 5))
             
@@ -195,7 +209,6 @@ class ClassSelectionScreen:
             text_p2 = self.font.render("Player 2", True, BRANCO)
             self.screen.blit(text_p2, text_p2.get_rect(center=(self.largura//2, 325)))
             
-            # Verificar hover
             mouse_pos = pygame.mouse.get_pos()
             self.hovered_class = None
             for btn in self.buttons_p1 + self.buttons_p2:
@@ -218,15 +231,87 @@ class ClassSelectionScreen:
                     sys.exit()
                 for btn in self.buttons_p1 + self.buttons_p2 + [self.confirm_button]:
                     btn.handle_event(event)
-                if event.type == pygame.MOUSEMOTION:
-                    pass  # Atualizado no loop principal
                     
             pygame.display.flip()
             clock.tick(60)
 
+class PowerupButton:
+    def __init__(self, x, y, width, height, powerup, callback):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.powerup = powerup
+        self.callback = callback
+        self.font = pygame.font.Font(None, 24)
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, DOURADO, self.rect, border_radius=10)
+        pygame.draw.rect(screen, PRETO, self.rect.inflate(-4, -4), border_radius=8)
+        
+        title = self.font.render(self.powerup['name'], True, BRANCO)
+        title_rect = title.get_rect(center=(self.rect.centerx, self.rect.top + 20))
+        screen.blit(title, title_rect)
+        
+        desc = self.font.render(self.powerup['description'], True, BRANCO)
+        desc_rect = desc.get_rect(center=(self.rect.centerx, self.rect.centery))
+        screen.blit(desc, desc_rect)
+
+    def on_click(self):
+        self.callback(self.powerup)
+
+class PowerupSelectionScreen:
+    def __init__(self, screen, font, powerups, player):
+        self.screen = screen
+        self.font = font
+        self.powerups = powerups
+        self.player = player
+        self.selected_powerup = None
+        self.buttons = []
+        
+        button_width = 300
+        button_height = 150
+        spacing = 30
+        total_width = 3 * button_width + 2 * spacing
+        start_x = (screen.get_width() - total_width) // 2
+        y = screen.get_height() // 2
+
+        for i, powerup in enumerate(powerups):
+            x = start_x + i * (button_width + spacing)
+            btn = PowerupButton(x, y, button_width, button_height, powerup, self.select_powerup)
+            self.buttons.append(btn)
+
+    def select_powerup(self, powerup):
+        self.selected_powerup = powerup
+
+    def run(self):
+        running = True
+        clock = pygame.time.Clock()
+        while running:
+            self.screen.fill(PRETO)
+            
+            title_text = self.font.render(f"Jogador {self.player.upper()} - Escolha um Powerup:", True, DOURADO)
+            title_rect = title_text.get_rect(center=(self.screen.get_width()//2, 100))
+            self.screen.blit(title_text, title_rect)
+
+            for btn in self.buttons:
+                btn.draw(self.screen)
+
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    for btn in self.buttons:
+                        if btn.rect.collidepoint(event.pos):
+                            btn.on_click()
+                            return self.selected_powerup
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    return None
+            clock.tick(60)
+
 # -------------------- Classes de Jogo --------------------
 class Player:
-    def __init__(self, image_path, start_grid_pos, speed, scale=1, class_name="Lebre", font=None):
+    def __init__(self, image_path, start_grid_pos, speed, scale=1, class_name="Lebre", font=None, powerups=None):
         try:
             full_image = pygame.image.load(image_path).convert_alpha()
         except pygame.error:
@@ -244,20 +329,43 @@ class Player:
         self.dest_grid_x = self.grid_x
         self.dest_grid_y = self.grid_y
         self.moving = False
-        self.speed = speed  # velocidade em pixels por ms
+        self.speed = speed
 
-        # Configurações baseadas na classe
+        # Configurações base
         health_dict = {"Lebre": 80, "Raposa": 100, "Veado": 120}
         attack_dict = {"Lebre": 8, "Raposa": 10, "Veado": 12}
-        move_range_dict = {"Lebre": 3, "Raposa": 2, "Veado": 1}
+        move_range_dict = {"Lebre": 4, "Raposa": 3, "Veado": 2}
+        attack_range_dict = {"Lebre": 1, "Raposa": 1, "Veado": 1}
         
-        self.health = health_dict.get(class_name, 1000)
-        self.attack_damage = attack_dict.get(class_name, 50)
-        self.move_range = move_range_dict.get(class_name, 1)
+        self.base_health = health_dict[class_name]
+        self.base_attack = attack_dict[class_name]
+        self.base_move_range = move_range_dict[class_name]
+        self.base_attack_range = attack_range_dict[class_name]
+        self.base_speed = speed
+
+        # Aplicar powerups
+        self.max_health = self.base_health
+        self.attack_damage = self.base_attack
+        self.move_range = self.base_move_range
+        self.attack_range = self.base_attack_range
+        self.regeneration = 0
+
+        for p in (powerups or []):
+            if p['type'] == 'health':
+                self.max_health += p['value']
+            elif p['type'] == 'attack':
+                self.attack_damage += p['value']
+            elif p['type'] == 'move_range':
+                self.move_range += p['value']
+            elif p['type'] == 'attack_range':
+                self.attack_range += p['value']
+            elif p['type'] == 'regeneration':
+                self.regeneration += p['value']
+
+        self.health = self.max_health
         self.moves_remaining = self.move_range
         self.class_name = class_name
 
-        # Sistema de dano
         self.font = font if font else pygame.font.Font(None, 24)
         self.last_damage = 0
         self.damage_display_time = 0
@@ -297,7 +405,6 @@ class Player:
                 if self.moves_remaining > 0:
                     self.moves_remaining -= 1
         
-        # Atualizar tempo de exibição de dano
         if self.damage_display_time > 0:
             self.damage_display_time = max(0, self.damage_display_time - dt)
 
@@ -311,7 +418,6 @@ class Player:
         sprite_draw_y = tile_center_y - self.sprite_height / 2
         display.blit(self.image, (sprite_draw_x, sprite_draw_y))
         
-        # Exibir dano
         if self.damage_display_time > 0:
             damage_text = self.font.render(f"-{self.last_damage}", True, (255, 0, 0))
             text_rect = damage_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
@@ -323,23 +429,22 @@ class Player:
         bar_width = 50
         bar_height = 5
         margin = 5
-        fill = (self.health / 100) * bar_width
+        fill = (self.health / self.max_health) * bar_width if self.max_health > 0 else 0
         x = center_x - bar_width / 2
         y = sprite_bottom_y + margin
         pygame.draw.rect(display, CINZENTO, (x, y, bar_width, bar_height))
         pygame.draw.rect(display, VERDE, (x, y, fill, bar_height))
 
-def attack(attacker, defender, reach=1):
-    if abs(attacker.grid_x - defender.grid_x) <= reach and abs(attacker.grid_y - defender.grid_y) <= reach:
+def attack(attacker, defender):
+    if abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range:
         damage = attacker.attack_damage
         defender.health -= damage
         defender.last_damage = damage
-        defender.damage_display_time = 2000  # 2 segundos
+        defender.damage_display_time = 2000
         
         if defender.health < 0:
             defender.health = 0
 
-        # Knockback
         delta_x = defender.grid_x - attacker.grid_x
         delta_y = defender.grid_y - attacker.grid_y
 
@@ -364,7 +469,7 @@ def attack(attacker, defender, reach=1):
                 defender.moving = False
 
 class World:
-    def __init__(self, x, y, tilepack, tilesize, display, scale, player1_class, player2_class, font):
+    def __init__(self, x, y, tilepack, tilesize, display, scale, player1_class, player2_class, font, p1_powerups=None, p2_powerups=None):
         self.x = x
         self.y = y
         self.tilesize = tilesize
@@ -396,15 +501,14 @@ class World:
         pos2 = (self.x - 1, self.y - 1)
         self.player1 = Player(self.player_images.get(player1_class, "assets/Classes/lebre_icon.png"), 
                              pos1, speed=0.5, scale= self.scale, 
-                             class_name=player1_class, font=font)
+                             class_name=player1_class, font=font, powerups=p1_powerups)
         self.player2 = Player(self.player_images.get(player2_class, "assets/Classes/lebre_icon.png"), 
                              pos2, speed=0.5, scale= self.scale, 
-                             class_name=player2_class, font=font)
+                             class_name=player2_class, font=font, powerups=p2_powerups)
         self.current_turn = "p1"
         self.player1.moves_remaining = self.player1.move_range
         self.player2.moves_remaining = self.player2.move_range
         
-        # Efeitos sonoros
         try:
             self.attack_sound = pygame.mixer.Sound("assets/Sounds/attack.wav")
         except:
@@ -423,7 +527,7 @@ class World:
         controls_font = pygame.font.Font(None, 24)
 
         while running:
-            dt = clock.tick(60)  # dt em ms
+            dt = clock.tick(60)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -442,10 +546,8 @@ class World:
                             attack(self.player2, self.player1)
                         if self.attack_sound:
                             self.attack_sound.play()
-                    elif event.type == pygame.KEYDOWN:
-                        self.key = event.key
                     else:
-                        self.key = None
+                        self.key = event.key
 
             if self.current_turn == "p1":
                 other_pos = (self.player2.grid_x, self.player2.grid_y)
@@ -461,14 +563,15 @@ class World:
 
             if self.current_turn == "p1" and not self.player1.moving:
                 if self.player1.moves_remaining == 0:
+                    self.player1.health = min(self.player1.health + self.player1.regeneration, self.player1.max_health)
                     self.current_turn = "p2"
                     self.player2.moves_remaining = self.player2.move_range
             elif self.current_turn == "p2" and not self.player2.moving:
                 if self.player2.moves_remaining == 0:
+                    self.player2.health = min(self.player2.health + self.player2.regeneration, self.player2.max_health)
                     self.current_turn = "p1"
                     self.player1.moves_remaining = self.player1.move_range
 
-            # Verificar vitória
             if self.player1.health <= 0:
                 winner = "p2"
                 running = False
@@ -499,7 +602,6 @@ class World:
             turn_text = font.render(f"Turn: {self.current_turn}", True, BRANCO)
             self.display.blit(turn_text, (10, 10))
 
-            # Legenda de controles
             space_text = controls_font.render("Espaço para atacar", True, BRANCO)
             enter_text = controls_font.render("Enter para passar turno", True, BRANCO)
             self.display.blit(space_text, (10, self.screen_height - 60))
@@ -536,7 +638,6 @@ class VictoryScreen:
         while running:
             self.screen.fill(PRETO)
             
-            # Texto principal
             if self.final:
                 main_text = f"JOGADOR {self.winner.upper()} VENCEU O JOGO!"
             else:
@@ -546,7 +647,6 @@ class VictoryScreen:
             text_rect = text.get_rect(center=(self.largura//2, self.altura//2 - 50))
             self.screen.blit(text, text_rect)
             
-            # Placar
             score_text = self.font.render(
                 f"PLACAR: Jogador 1 - {self.p1_score}  |  Jogador 2 - {self.p2_score}", 
                 True, BRANCO
@@ -554,7 +654,6 @@ class VictoryScreen:
             score_rect = score_text.get_rect(center=(self.largura//2, self.altura//2 + 20))
             self.screen.blit(score_text, score_rect)
             
-            # Instruções
             if self.final:
                 instruction = "Pressione R para recomeçar ou Q para sair"
             else:
@@ -593,21 +692,22 @@ class Game:
         self.font = pygame.font.Font(None, 36)
         self.p1_score = 0
         self.p2_score = 0
+        self.p1_powerups = []
+        self.p2_powerups = []
 
     def run(self):
         while True:
-            # Tela inicial e seleção de classe
             splash = SplashScreen(self.screen, self.font, self.screen_width, self.screen_height)
             splash.run()
             class_selection = ClassSelectionScreen(self.font)
             class_selection.run()
             
-            # Resetar pontuações a cada novo jogo
             self.p1_score = 0
             self.p2_score = 0
+            self.p1_powerups = []
+            self.p2_powerups = []
             
-            while True:  # Loop principal de rodadas
-                # Criar novo mundo para cada rodada
+            while True:
                 TILES = (
                     pygame.image.load("assets/Tiles/tile0.png").convert_alpha(),
                     pygame.image.load("assets/Tiles/tile1.png").convert_alpha(),
@@ -618,29 +718,37 @@ class Game:
                     pygame.image.load("assets/Tiles/tile6.png").convert_alpha()
                 )
                 world = World(SIZE_X, SIZE_Y, TILES, TILE_SIZE, self.screen, SCALE, 
-                             class_selection.selected_p1, class_selection.selected_p2, self.font)
+                             class_selection.selected_p1, class_selection.selected_p2, self.font,
+                             self.p1_powerups, self.p2_powerups)
                 
-                # Executar batalha e verificar vencedor
                 winner = world.draw_map()
                 
-                # Atualizar pontuação
                 if winner == "p1":
                     self.p1_score += 1
+                    loser = "p2"
                 else:
                     self.p2_score += 1
+                    loser = "p1"
                 
-                # Verificar vitória final
                 final_victory = self.p1_score >= 2 or self.p2_score >= 2
                 
-                # Mostrar tela de vitória
                 victory_screen = VictoryScreen(self.screen, self.font, winner, 
                                               self.p1_score, self.p2_score, final_victory)
                 result = victory_screen.run()
                 
-                # Reiniciar ou sair
+                if not final_victory:
+                    selected = random.sample(POWERUPS, 3)
+                    powerup_screen = PowerupSelectionScreen(self.screen, self.font, selected, loser)
+                    chosen = powerup_screen.run()
+                    if chosen:
+                        if loser == "p1":
+                            self.p1_powerups.append(chosen)
+                        else:
+                            self.p2_powerups.append(chosen)
+                
                 if final_victory:
                     if result == 'restart':
-                        break  # Volta para o menu inicial
+                        break
                     else:
                         pygame.quit()
                         sys.exit()
