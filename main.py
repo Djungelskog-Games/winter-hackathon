@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import math
 import random
 
 os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -11,28 +12,31 @@ CINZENTO = (128, 128, 128)
 DOURADO = (218, 165, 32)
 PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
+VERMELHO = (255, 0, 0, 50)
 TILE_SIZE = 32
 SIZE_X = 7
 SIZE_Y = 7
 SCALE = 2
+FONT = "assets\Font\Pixeboy.ttf"
 
-# Lista de Powerups atualizada
 POWERUPS = [
-    {'type': 'health', 'name': 'Health Boost', 'description': '+20 Vida Máxima', 'value': 20},
-    {'type': 'attack', 'name': 'Attack Boost', 'description': '+3 Ataque', 'value': 3},
-    {'type': 'move_range', 'name': 'Movement Boost', 'description': '+1 Movimento', 'value': 1},
-    {'type': 'attack_range', 'name': 'Longo Alcance', 'description': '+1 Alcance de Ataque', 'value': 1},
-    {'type': 'regeneration', 'name': 'Regeneration', 'description': 'Cura 5 por turno', 'value': 5}
+    {'type': 'health', 'name': ' Queijada Especial', 'description': '+20 Vida Máxima', 'value': 20},
+    {'type': 'attack', 'name': 'Travesseiro Mágico', 'description': '+3 Ataque', 'value': 3},
+    {'type': 'move_range', 'name': 'Faca da Chinada', 'description': '+1 Movimento', 'value': 1},
+    {'type': 'attack_range', 'name': 'Pedra da Calçada', 'description': '+1 Alcance de Ataque', 'value': 1},
+    {'type': 'regeneration', 'name': 'Betty', 'description': 'Cura 5 por turno', 'value': 5}
 ]
 
 pygame.mixer.init()
 SOUNDS = {'vencer': pygame.mixer.Sound('assets/Sounds/vencer.wav'),
            'morrer': pygame.mixer.Sound('assets/Sounds/morrer.wav'),
            'butao': pygame.mixer.Sound('assets/Sounds/clicar_butao.wav'),
-           'ataque_raposa': pygame.mixer.Sound('assets/Sounds/raposa_ataque.wav'),
-           'ataque_veado': pygame.mixer.Sound('assets/Sounds/veado_ataque.wav'),
-           'ataque_lebre': pygame.mixer.Sound('assets/Sounds/lebre_ataque.wav'),
-           'ataque_urso': pygame.mixer.Sound('assets/Sounds/urso_ataque.wav')}
+           'powerup': pygame.mixer.Sound('assets/Sounds/apanhar_powerup.wav'),
+           'Raposa': pygame.mixer.Sound('assets/Sounds/raposa_ataque.wav'),
+           'Veado': pygame.mixer.Sound('assets/Sounds/veado_ataque.wav'),
+           'Lebre': pygame.mixer.Sound('assets/Sounds/lebre_ataque.wav'),
+           'Urso': pygame.mixer.Sound('assets/Sounds/urso_ataque.wav')}
+
 # -------------------- Classes de Interface --------------------
 class BotaoIcone:
     def __init__(self, x, y, image_path, class_name, callback, player, size=(150, 150)):
@@ -97,22 +101,40 @@ class SplashScreen:
             overlay_image2.fill((0, 0, 0, 180))
             overlay_rect2 = overlay_image2.get_rect(center=(self.largura // 2, 250))
 
-        self.screen.blit(splash_image, image_rect)
-        self.screen.blit(overlay_image, overlay_rect)
-        self.screen.blit(overlay_image2, overlay_rect2)
-        pygame.display.flip()
+        # Configurações da animação
+        amplitude = 10  # Altura do movimento em pixels
+        velocidade = 0.04  # Velocidade da animação
+        angulo = 0
+        clock = pygame.time.Clock()
 
         while True:
+            # Calcula movimento vertical usando seno
+            deslocamento_y = math.sin(angulo) * amplitude
+            overlay_rect.centery = 150 + deslocamento_y  # Aplica o deslocamento
+            angulo += velocidade
+
+            # Redesenha todos os elementos
+            self.screen.blit(splash_image, image_rect)
+            self.screen.blit(overlay_image, overlay_rect)
+            self.screen.blit(overlay_image2, overlay_rect2)
+            pygame.display.flip()
+
+            # Controla a taxa de atualização
+            clock.tick(60)
+
+            # Processamento de eventos
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    pygame.mixer.music.stop()
                     return
 
 class ClassSelectionScreen:
     def __init__(self, font):
-        self.largura = 800
+        SOUNDS['butao'].play()
+        self.largura = 1000
         self.altura = 700
         self.font = font
         self.selected_p1 = None
@@ -179,13 +201,13 @@ class ClassSelectionScreen:
             stats = self.stats[self.hovered_class]
             tooltip_width = 200
             tooltip_height = 110
+
             x, y = pygame.mouse.get_pos()
             x += 20
             y += 20
             
             tooltip_surface = pygame.Surface((tooltip_width, tooltip_height), pygame.SRCALPHA)
             tooltip_surface.fill((0, 0, 0, 150))
-            
             title = self.font.render(self.hovered_class, True, BRANCO)
             tooltip_surface.blit(title, (10, 5))
             
@@ -237,10 +259,11 @@ class ClassSelectionScreen:
 
 class PowerupButton:
     def __init__(self, x, y, width, height, powerup, callback):
+        SOUNDS['powerup'].play()
         self.rect = pygame.Rect(x, y, width, height)
         self.powerup = powerup
         self.callback = callback
-        self.font = pygame.font.Font(None, 24)
+        self.font = pygame.font.Font(FONT, 24)
 
     def draw(self, screen):
         pygame.draw.rect(screen, DOURADO, self.rect, border_radius=10)
@@ -287,7 +310,7 @@ class PowerupSelectionScreen:
         while running:
             self.screen.fill(PRETO)
             
-            title_text = self.font.render(f"Jogador {self.player.upper()} - Escolha um Powerup:", True, DOURADO)
+            title_text = self.font.render(f"Jogador, {self.player.upper()} - Escolha um Powerup:", True, DOURADO)
             title_rect = title_text.get_rect(center=(self.screen.get_width()//2, 100))
             self.screen.blit(title_text, title_rect)
 
@@ -311,7 +334,7 @@ class PowerupSelectionScreen:
 
 # -------------------- Classes de Jogo --------------------
 class Player:
-    def __init__(self, image_path, start_grid_pos, speed, scale=1, class_name="Lebre", font=None, powerups=None):
+    def __init__(self, image_path, start_grid_pos, speed, scale=1, class_name="Lebre", font=FONT, powerups=None):
         try:
             full_image = pygame.image.load(image_path).convert_alpha()
         except pygame.error:
@@ -366,7 +389,7 @@ class Player:
         self.moves_remaining = self.move_range
         self.class_name = class_name
 
-        self.font = font if font else pygame.font.Font(None, 24)
+        self.font = font if font else pygame.font.Font(FONT, 24)
         self.last_damage = 0
         self.damage_display_time = 0
 
@@ -422,20 +445,9 @@ class Player:
             damage_text = self.font.render(f"-{self.last_damage}", True, (255, 0, 0))
             text_rect = damage_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
             display.blit(damage_text, text_rect)
-        
-        self.draw_health_bar(display, tile_center_x, sprite_draw_y + self.sprite_height)
-
-    def draw_health_bar(self, display, center_x, sprite_bottom_y):
-        bar_width = 50
-        bar_height = 5
-        margin = 5
-        fill = (self.health / self.max_health) * bar_width if self.max_health > 0 else 0
-        x = center_x - bar_width / 2
-        y = sprite_bottom_y + margin
-        pygame.draw.rect(display, CINZENTO, (x, y, bar_width, bar_height))
-        pygame.draw.rect(display, VERDE, (x, y, fill, bar_height))
 
 def attack(attacker, defender):
+    SOUNDS[attacker.class_name].play()
     if abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range:
         damage = attacker.attack_damage
         defender.health -= damage
@@ -470,6 +482,7 @@ def attack(attacker, defender):
 
 class World:
     def __init__(self, x, y, tilepack, tilesize, display, scale, player1_class, player2_class, font, p1_powerups=None, p2_powerups=None):
+        SOUNDS['butao'].play()
         self.x = x
         self.y = y
         self.tilesize = tilesize
@@ -499,23 +512,94 @@ class World:
         }
         pos1 = (0, 0)
         pos2 = (self.x - 1, self.y - 1)
-        self.player1 = Player(self.player_images.get(player1_class, "assets/Classes/lebre_icon.png"), 
+        self.player1 = Player(self.player_images.get(player1_class), 
                              pos1, speed=0.5, scale= self.scale, 
                              class_name=player1_class, font=font, powerups=p1_powerups)
-        self.player2 = Player(self.player_images.get(player2_class, "assets/Classes/lebre_icon.png"), 
+        self.player2 = Player(self.player_images.get(player2_class), 
                              pos2, speed=0.5, scale= self.scale, 
                              class_name=player2_class, font=font, powerups=p2_powerups)
         self.current_turn = "p1"
         self.player1.moves_remaining = self.player1.move_range
         self.player2.moves_remaining = self.player2.move_range
         
-        try:
-            self.attack_sound = pygame.mixer.Sound("assets/Sounds/attack.wav")
-        except:
-            self.attack_sound = None
         
         pygame.mixer.music.load("assets/Sounds/song_batalha.wav")
         pygame.mixer.music.play(-1)
+
+    def draw_attack_range(self, offset_x, offset_y):
+        overlay = pygame.Surface((self.x * TILE_SIZE * SCALE, self.y * TILE_SIZE * SCALE), pygame.SRCALPHA)
+        
+        current_player = self.player1 if self.current_turn == "p1" else self.player2
+        attack_range = current_player.attack_range
+        px, py = current_player.grid_x, current_player.grid_y
+
+        for dx in range(-attack_range, attack_range + 1):
+            for dy in range(-attack_range, attack_range + 1):
+                if abs(dx) + abs(dy) <= attack_range:
+                    x = px + dx
+                    y = py + dy
+                    if 0 <= x < self.x and 0 <= y < self.y:
+                        pos_x = x * TILE_SIZE * SCALE
+                        pos_y = y * TILE_SIZE * SCALE
+                        pygame.draw.rect(overlay, VERMELHO, (pos_x, pos_y, TILE_SIZE*SCALE, TILE_SIZE*SCALE))
+
+        self.display.blit(overlay, (offset_x, offset_y))
+
+    def draw_player_stats(self, display, offset_x, offset_y, player, side):
+        panel_width = 200
+        panel_height = 250
+        spacing = 20
+        
+        if side == "left":
+            panel_x = offset_x - panel_width - spacing
+        else:
+            panel_x = offset_x + (self.x * self.tilesize * self.scale) + spacing
+            
+        panel_y = offset_y + 50
+        
+        # Fundo do painel
+        pygame.draw.rect(display, DOURADO, (panel_x, panel_y, panel_width, panel_height), border_radius=10)
+        pygame.draw.rect(display, PRETO, (panel_x+2, panel_y+2, panel_width-4, panel_height-4), border_radius=8)
+        
+        # Sprite do jogador
+        sprite = pygame.transform.scale(player.image, (100, 100))
+        display.blit(sprite, (panel_x + (panel_width-100)//2, panel_y + 10))
+        
+        # Stats
+        stats_font = pygame.font.Font(FONT, 24)
+        y_offset = 120
+        
+        # Ataque
+        attack_text = stats_font.render(f"Ataque: {player.attack_damage}", True, BRANCO)
+        display.blit(attack_text, (panel_x + 20, panel_y + y_offset))
+        y_offset += 30
+        
+        # Movimento
+        move_text = stats_font.render(f"Movimento: {player.move_range}", True, BRANCO)
+        display.blit(move_text, (panel_x + 20, panel_y + y_offset))
+        y_offset += 30
+        
+        # Alcance
+        range_text = stats_font.render(f"Alcance: {player.attack_range}", True, BRANCO)
+        display.blit(range_text, (panel_x + 20, panel_y + y_offset))
+        y_offset += 30
+        
+        # Barra de vida
+        health_width = 160
+        health_height = 20
+        health_x = panel_x + (panel_width - health_width)//2
+        health_y = panel_y + y_offset
+        
+        # Fundo da barra
+        pygame.draw.rect(display, CINZENTO, (health_x, health_y, health_width, health_height))
+        # Vida atual
+        fill_width = (player.health / player.max_health) * health_width
+        pygame.draw.rect(display, VERDE, (health_x, health_y, fill_width, health_height))
+        
+        # Texto da vida
+        health_text = stats_font.render(f"{player.health}/{player.max_health}", True, BRANCO)
+        text_rect = health_text.get_rect(center=(health_x + health_width//2, health_y + health_height//2))
+        display.blit(health_text, text_rect)
 
     def draw_map(self):
         winner = None
@@ -523,8 +607,8 @@ class World:
         clock = pygame.time.Clock()
         player1_controls = {pygame.K_w: (0, -1), pygame.K_a: (-1, 0), pygame.K_s: (0, 1), pygame.K_d: (1, 0)}
         player2_controls = {pygame.K_UP: (0, -1), pygame.K_LEFT: (-1, 0), pygame.K_DOWN: (0, 1), pygame.K_RIGHT: (1, 0)}
-        font = pygame.font.Font(None, 36)
-        controls_font = pygame.font.Font(None, 24)
+        font = pygame.font.Font(FONT, 40)
+        controls_font = pygame.font.Font(FONT, 28)
 
         while running:
             dt = clock.tick(60)
@@ -544,10 +628,9 @@ class World:
                             attack(self.player1, self.player2)
                         else:
                             attack(self.player2, self.player1)
-                        if self.attack_sound:
-                            self.attack_sound.play()
                     else:
                         self.key = event.key
+                        SOUNDS['butao'].play()
 
             if self.current_turn == "p1":
                 other_pos = (self.player2.grid_x, self.player2.grid_y)
@@ -573,9 +656,11 @@ class World:
                     self.player1.moves_remaining = self.player1.move_range
 
             if self.player1.health <= 0:
+                SOUNDS['morrer'].play()
                 winner = "p2"
                 running = False
             elif self.player2.health <= 0:
+                SOUNDS['morrer'].play()
                 winner = "p1"
                 running = False
 
@@ -596,16 +681,31 @@ class World:
                     pos_y_tile = offset_y + y_idx * self.tilesize * self.scale
                     self.display.blit(tile, (pos_x_tile, pos_y_tile))
 
+            self.draw_attack_range(offset_x, offset_y)
+
+            # Desenha stats dos jogadores
+            self.draw_player_stats(self.display, offset_x, offset_y, self.player1, "left")
+            self.draw_player_stats(self.display, offset_x, offset_y, self.player2, "right")
+
             self.player1.draw(self.display, offset_x, offset_y)
             self.player2.draw(self.display, offset_x, offset_y)
 
-            turn_text = font.render(f"Turn: {self.current_turn}", True, BRANCO)
-            self.display.blit(turn_text, (10, 10))
-
-            space_text = controls_font.render("Espaço para atacar", True, BRANCO)
-            enter_text = controls_font.render("Enter para passar turno", True, BRANCO)
-            self.display.blit(space_text, (10, self.screen_height - 60))
-            self.display.blit(enter_text, (10, self.screen_height - 30))
+            turn_text = font.render(f"TURNO DO JOGADOR: {self.current_turn.upper()}", True, DOURADO)
+            text_rect = turn_text.get_rect(center=(self.screen_width//2, 70))
+            self.display.blit(turn_text, text_rect)
+            
+            controls_y = self.screen_height - 100
+            controls = [
+                "WASD - Movimentar Jogador 1",
+                "SETAS - Movimentar Jogador 2",
+                "SPACE - Atacar",
+                "ENTER - Finalizar Turno"
+            ]
+            
+            for i, text in enumerate(controls):
+                control_text = controls_font.render(text, True, DOURADO)
+                text_rect = control_text.get_rect(center=(self.screen_width//2, controls_y + i*25))
+                self.display.blit(control_text, text_rect)
 
             pygame.display.flip()
         
@@ -614,6 +714,7 @@ class World:
 
 class VictoryScreen:
     def __init__(self, screen, font, winner, p1_score, p2_score, final=False):
+        SOUNDS['vencer'].play()
         self.screen = screen
         self.font = font
         self.winner = winner
@@ -689,7 +790,7 @@ class Game:
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.key.set_repeat()
         pygame.display.set_caption("Guerra por Sintra")
-        self.font = pygame.font.Font(None, 36)
+        self.font = pygame.font.Font(FONT, 30)
         self.p1_score = 0
         self.p2_score = 0
         self.p1_powerups = []
