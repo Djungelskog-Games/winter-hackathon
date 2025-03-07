@@ -24,11 +24,11 @@ SECRET = (pygame.K_UP, pygame.K_UP, pygame.K_DOWN, pygame.K_DOWN, pygame.K_LEFT,
           pygame.K_RIGHT, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_b, pygame.K_a, pygame.K_RETURN)
 
 POWERUPS = [
-    {'type': 'health', 'name': ' Queijada Especial', 'description': '+20 Vida Maxima', 'value': 20},
-    {'type': 'attack', 'name': 'Travesseiro Magico', 'description': '+3 Ataque', 'value': 3},
-    {'type': 'move_range', 'name': 'Faca da Chinada', 'description': '+1 Movimento', 'value': 1},
-    {'type': 'attack_range', 'name': 'Pedra da Calcada', 'description': '+1 Alcance de Ataque', 'value': 1},
-    {'type': 'regeneration', 'name': 'Betty', 'description': 'Cura 5 por turno', 'value': 5}
+    {'type': 'health', 'name': ' Queijada Especial', 'description': '+20 Vida Maxima', 'value': 20, 'image': 'assets/Powerups/Queijada.png'},
+    {'type': 'attack', 'name': 'Travesseiro Magico', 'description': '+3 Ataque', 'value': 3, 'image': 'assets/Powerups/Travesseiro.png'},
+    {'type': 'move_range', 'name': 'Faca da Chinada', 'description': '+1 Movimento', 'value': 1, 'image': 'assets/Powerups/Faca.png'},
+    {'type': 'attack_range', 'name': 'Pedra da Calcada', 'description': '+1 Alcance de Ataque', 'value': 1, 'image': 'assets/Powerups/Pedra.png'},
+    {'type': 'regeneration', 'name': 'Betty', 'description': 'Cura 5 por turno', 'value': 5, 'image': 'assets/Powerups/Betty.png'}
 ]
 
 pygame.mixer.init()
@@ -39,7 +39,9 @@ SOUNDS = {'vencer': pygame.mixer.Sound('assets/Sounds/vencer.wav'),
            'Bufo': pygame.mixer.Sound('assets/Sounds/Bufo_ataque.wav'),
            'Raposa': pygame.mixer.Sound('assets/Sounds/Raposa_ataque.wav'),
            'Lebre': pygame.mixer.Sound('assets/Sounds/Lebre_ataque.wav'),
-           'Urso': pygame.mixer.Sound('assets/Sounds/urso_ataque.wav')}
+           'Urso': pygame.mixer.Sound('assets/Sounds/urso_ataque.wav'),
+           'escolher': pygame.mixer.Sound('assets/Sounds/escolha_personagem.wav'),
+           'djungelskog': pygame.mixer.Sound('assets/Sounds/djungelskog.wav')}
 
 # -------------------- Classes de Interface --------------------
 class BotaoIcone:
@@ -137,7 +139,7 @@ class SplashScreen:
 
 class ClassSelectionScreen:
     def __init__(self, font):
-        SOUNDS['butao'].play()
+        SOUNDS['escolher'].play()
         self.largura = 1000
         self.altura = 700
         self.font = font
@@ -262,6 +264,7 @@ class ClassSelectionScreen:
                     self.handle_class_selection("p1", "Urso")
                     self.handle_class_selection("p2", "Urso")
                     self.confirm_selection()
+                    SOUNDS['djungelskog'].play()
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == SECRET[self.secret_counter]:
@@ -283,17 +286,27 @@ class PowerupButton:
         self.powerup = powerup
         self.callback = callback
         self.font = pygame.font.Font(FONT, 24)
+        
+        # Carrega e redimensiona a imagem
+        self.image = pygame.image.load(powerup['image']).convert_alpha()
+        self.image = pygame.transform.scale(self.image, (100, 100))  # Ajuste o tamanho conforme necessário
 
     def draw(self, screen):
         pygame.draw.rect(screen, DOURADO, self.rect, border_radius=10)
         pygame.draw.rect(screen, PRETO, self.rect.inflate(-4, -4), border_radius=8)
         
+        # Desenha a imagem
+        img_rect = self.image.get_rect(center=(self.rect.centerx, self.rect.top + 40))
+        screen.blit(self.image, img_rect)
+        
+        # Ajusta posição do título para abaixo da imagem
         title = self.font.render(self.powerup['name'], True, BRANCO)
-        title_rect = title.get_rect(center=(self.rect.centerx, self.rect.top + 20))
+        title_rect = title.get_rect(center=(self.rect.centerx, img_rect.bottom + 10))
         screen.blit(title, title_rect)
         
+        # Descrição mantida no centro
         desc = self.font.render(self.powerup['description'], True, BRANCO)
-        desc_rect = desc.get_rect(center=(self.rect.centerx, self.rect.centery))
+        desc_rect = desc.get_rect(center=(self.rect.centerx, self.rect.centery + 50))
         screen.blit(desc, desc_rect)
 
     def on_click(self):
@@ -321,7 +334,7 @@ class PowerupSelectionScreen:
         spacing = 30
         total_width = 3 * button_width + 2 * spacing
         start_x = (screen.get_width() - total_width) // 2
-        y = screen.get_height() // 2
+        y = screen.get_height() // 2 - button_height // 2
 
         for i, powerup in enumerate(powerups):
             x = start_x + i * (button_width + spacing)
@@ -331,17 +344,29 @@ class PowerupSelectionScreen:
     def select_powerup(self, powerup):
         self.selected_powerup = powerup
 
-    def run(self):
+    def run(self):  # Agora o método faz parte da classe corretamente
         running = True
         clock = pygame.time.Clock()
+        title_font = pygame.font.Font(FONT, 70)
+        
+        # Configurações da animação de onda seno
+        amplitude = 10  # Altura do movimento em pixels
+        velocidade = 0.05  # Velocidade da animação
+        angulo = 0  # Ângulo inicial
+        
         while running:
             if self.powerup_bg:
                 self.screen.blit(self.powerup_bg, (0, 0))
             else:
                 self.screen.fill(PRETO)
 
-            title_text = self.font.render(f"Jogador, {self.player.upper()} - Escolha um Powerup:", True, VERMELHO)
-            title_rect = title_text.get_rect(center=(self.screen.get_width()//2, 100))
+            # Calcula movimento vertical usando seno
+            deslocamento_y = math.sin(angulo) * amplitude
+            angulo += velocidade
+            
+            # Renderiza texto com animação
+            title_text = title_font.render(f"{self.player.upper()} - Escolhe um Powerup:", True, VERMELHO)
+            title_rect = title_text.get_rect(center=(self.screen.get_width()//2, 100 + deslocamento_y))
             self.screen.blit(title_text, title_rect)
 
             for btn in self.buttons:
@@ -520,11 +545,10 @@ def attack(attacker, defender, coor_pedras):
 
         knockback_x = 1 if delta_x > 0 else (-1 if delta_x < 0 else 0)
         knockback_y = 1 if delta_y > 0 else (-1 if delta_y < 0 else 0)
-
         new_x = defender.grid_x + knockback_x
         new_y = defender.grid_y + knockback_y
 
-        if 0 <= new_x < SIZE_X and 0 <= new_y < SIZE_Y:
+        if 0 <= new_x < SIZE_X and 0 <= new_y < SIZE_Y and not ((new_x, new_y) in coor_pedras):
             if (new_x, new_y) != (attacker.grid_x, attacker.grid_y):
                 defender.grid_x = new_x
                 defender.grid_y = new_y
