@@ -8,6 +8,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # Definições globais de cores e tamanhos
 VERDE = (0, 255, 0)
+AZUL = (0, 0, 255)
 CINZENTO = (128, 128, 128)
 DOURADO = (218, 165, 32)
 PRETO = (0, 0, 0)
@@ -95,7 +96,7 @@ class SplashScreen:
         
         try:
             overlay_image2 = pygame.image.load("assets/Starting/Starting_Subtext.png").convert_alpha()
-            overlay_rect2 = overlay_image2.get_rect(center=(self.largura // 2, 250))
+            overlay_rect2 = overlay_image2.get_rect(center=(self.largura // 2, 325))
         except pygame.error:
             overlay_image2 = pygame.Surface((600, 100), pygame.SRCALPHA)
             overlay_image2.fill((0, 0, 0, 180))
@@ -176,9 +177,9 @@ class ClassSelectionScreen:
                                          lambda p, c: self.confirm_selection(), "confirm", (700, 90))
 
         self.stats = {
-            "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 4},
-            "Bufo": {"Vida": 100, "Ataque": 10, "Movimento": 3},
-            "Raposa": {"Vida": 120, "Ataque": 12, "Movimento": 2}
+            "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 4, "Alcance": 1},
+            "Bufo": {"Vida": 100, "Ataque": 10, "Movimento": 3, "Alcance": 2},
+            "Raposa": {"Vida": 120, "Ataque": 12, "Movimento": 2, "Alcance": 3}
         }
         self.hovered_class = None
 
@@ -200,7 +201,7 @@ class ClassSelectionScreen:
         if self.hovered_class:
             stats = self.stats[self.hovered_class]
             tooltip_width = 200
-            tooltip_height = 110
+            tooltip_height = 130
 
             x, y = pygame.mouse.get_pos()
             x += 20
@@ -321,7 +322,7 @@ class PowerupSelectionScreen:
             else:
                 self.screen.fill(PRETO)
 
-            title_text = self.font.render(f"Jogador, {self.player.upper()} - Escolha um Powerup:", True, DOURADO)
+            title_text = self.font.render(f"Jogador, {self.player.upper()} - Escolha um Powerup:", True, VERMELHO)
             title_rect = title_text.get_rect(center=(self.screen.get_width()//2, 100))
             self.screen.blit(title_text, title_rect)
 
@@ -369,7 +370,7 @@ class Player:
         health_dict = {"Lebre": 80, "Bufo": 100, "Raposa": 120}
         attack_dict = {"Lebre": 8, "Bufo": 10, "Raposa": 12}
         move_range_dict = {"Lebre": 4, "Bufo": 3, "Raposa": 2}
-        attack_range_dict = {"Lebre": 1, "Bufo": 1, "Raposa": 1}
+        attack_range_dict = {"Lebre": 1, "Bufo": 2, "Raposa": 3}
         
         self.base_health = health_dict[class_name]
         self.base_attack = attack_dict[class_name]
@@ -414,6 +415,7 @@ class Player:
                     self.dest_grid_x = new_grid_x
                     self.dest_grid_y = new_grid_y
                     self.moving = True
+                    self.stamina = True
                 return
 
     def update(self, dt):
@@ -638,6 +640,7 @@ class World:
                     elif event.key == pygame.K_SPACE:
                         if self.current_turn == "p1":
                             attack(self.player1, self.player2)
+                            self
                         else:
                             attack(self.player2, self.player1)
                     else:
@@ -843,7 +846,7 @@ class Game:
                     self.p2_score += 1
                     loser = "p1"
                 
-                final_victory = self.p1_score >= 2 or self.p2_score >= 2
+                final_victory = self.p1_score >= 5 or self.p2_score >= 5
                 
                 victory_screen = VictoryScreen(self.screen, self.font, winner, 
                                               self.p1_score, self.p2_score, final_victory)
