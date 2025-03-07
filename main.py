@@ -8,6 +8,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # Definições globais de cores e tamanhos
 VERDE = (0, 255, 0)
+AZUL = (0, 0, 255)
 CINZENTO = (128, 128, 128)
 DOURADO = (218, 165, 32)
 PRETO = (0, 0, 0)
@@ -20,10 +21,10 @@ SCALE = 2
 FONT = "assets\Font\Pixeboy.ttf"
 
 POWERUPS = [
-    {'type': 'health', 'name': ' Queijada Especial', 'description': '+20 Vida Máxima', 'value': 20},
-    {'type': 'attack', 'name': 'Travesseiro Mágico', 'description': '+3 Ataque', 'value': 3},
+    {'type': 'health', 'name': ' Queijada Especial', 'description': '+20 Vida Maxima', 'value': 20},
+    {'type': 'attack', 'name': 'Travesseiro Magico', 'description': '+3 Ataque', 'value': 3},
     {'type': 'move_range', 'name': 'Faca da Chinada', 'description': '+1 Movimento', 'value': 1},
-    {'type': 'attack_range', 'name': 'Pedra da Calçada', 'description': '+1 Alcance de Ataque', 'value': 1},
+    {'type': 'attack_range', 'name': 'Pedra da Calcada', 'description': '+1 Alcance de Ataque', 'value': 1},
     {'type': 'regeneration', 'name': 'Betty', 'description': 'Cura 5 por turno', 'value': 5}
 ]
 
@@ -31,10 +32,10 @@ pygame.mixer.init()
 SOUNDS = {'vencer': pygame.mixer.Sound('assets/Sounds/vencer.wav'),
            'morrer': pygame.mixer.Sound('assets/Sounds/morrer.wav'),
            'butao': pygame.mixer.Sound('assets/Sounds/clicar_butao.wav'),
-           'powerup': pygame.mixer.Sound('assets/Sounds/apanhar_powerup.wav'),
-           'Raposa': pygame.mixer.Sound('assets/Sounds/raposa_ataque.wav'),
-           'Veado': pygame.mixer.Sound('assets/Sounds/veado_ataque.wav'),
-           'Lebre': pygame.mixer.Sound('assets/Sounds/lebre_ataque.wav'),
+           'powerup': pygame.mixer.Sound('assets/Sounds/escolher_powerup.wav'),
+           'Bufo': pygame.mixer.Sound('assets/Sounds/Bufo_ataque.wav'),
+           'Raposa': pygame.mixer.Sound('assets/Sounds/Raposa_ataque.wav'),
+           'Lebre': pygame.mixer.Sound('assets/Sounds/Lebre_ataque.wav'),
            'Urso': pygame.mixer.Sound('assets/Sounds/urso_ataque.wav')}
 
 # -------------------- Classes de Interface --------------------
@@ -95,7 +96,7 @@ class SplashScreen:
         
         try:
             overlay_image2 = pygame.image.load("assets/Starting/Starting_Subtext.png").convert_alpha()
-            overlay_rect2 = overlay_image2.get_rect(center=(self.largura // 2, 250))
+            overlay_rect2 = overlay_image2.get_rect(center=(self.largura // 2, 325))
         except pygame.error:
             overlay_image2 = pygame.Surface((600, 100), pygame.SRCALPHA)
             overlay_image2.fill((0, 0, 0, 180))
@@ -157,28 +158,28 @@ class ClassSelectionScreen:
 
         self.buttons_p1 = [
             BotaoIcone(self.base_x - self.icon_spacing, self.player1_y, 
-                       "assets/Classes/lebre_icon.png", "Lebre", self.handle_class_selection, "p1"),
+                       "assets/Classes/Lebre.png", "Lebre", self.handle_class_selection, "p1"),
             BotaoIcone(self.base_x, self.player1_y, 
-                       "assets/Classes/raposa_icon.png", "Raposa", self.handle_class_selection, "p1"),
+                       "assets/Classes/Bufo.png", "Bufo", self.handle_class_selection, "p1"),
             BotaoIcone(self.base_x + self.icon_spacing, self.player1_y, 
-                       "assets/Classes/veado_icon.png", "Veado", self.handle_class_selection, "p1")
+                       "assets/Classes/Raposa.png", "Raposa", self.handle_class_selection, "p1")    
         ]
         self.buttons_p2 = [
             BotaoIcone(self.base_x - self.icon_spacing, self.player2_y, 
-                       "assets/Classes/lebre_icon.png", "Lebre", self.handle_class_selection, "p2"),
+                       "assets/Classes/Lebre.png", "Lebre", self.handle_class_selection, "p2"),
             BotaoIcone(self.base_x, self.player2_y, 
-                       "assets/Classes/raposa_icon.png", "Raposa", self.handle_class_selection, "p2"),
+                       "assets/Classes/Bufo.png", "Bufo", self.handle_class_selection, "p2"),
             BotaoIcone(self.base_x + self.icon_spacing, self.player2_y, 
-                       "assets/Classes/veado_icon.png", "Veado", self.handle_class_selection, "p2")
+                       "assets/Classes/Raposa.png", "Raposa", self.handle_class_selection, "p2")
         ]
         self.confirm_button = BotaoIcone(self.largura//2, self.altura - 100, 
                                          "assets/Classes/confirm_button.png", "Confirmar", 
                                          lambda p, c: self.confirm_selection(), "confirm", (700, 90))
 
         self.stats = {
-            "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 4},
-            "Raposa": {"Vida": 100, "Ataque": 10, "Movimento": 3},
-            "Veado": {"Vida": 120, "Ataque": 12, "Movimento": 2}
+            "Lebre": {"Vida": 80, "Ataque": 8, "Movimento": 4, "Alcance": 1},
+            "Bufo": {"Vida": 100, "Ataque": 10, "Movimento": 3, "Alcance": 2},
+            "Raposa": {"Vida": 120, "Ataque": 12, "Movimento": 2, "Alcance": 3}
         }
         self.hovered_class = None
 
@@ -200,7 +201,7 @@ class ClassSelectionScreen:
         if self.hovered_class:
             stats = self.stats[self.hovered_class]
             tooltip_width = 200
-            tooltip_height = 110
+            tooltip_height = 130
 
             x, y = pygame.mouse.get_pos()
             x += 20
@@ -226,9 +227,9 @@ class ClassSelectionScreen:
             self.screen.fill(PRETO)
             if self.bg_image:
                 self.screen.blit(self.bg_image, (0, 0))
-            text_p1 = self.font.render("Player 1", True, BRANCO)
+            text_p1 = self.font.render("Player 1", True, VERMELHO)
             self.screen.blit(text_p1, text_p1.get_rect(center=(self.largura//2, 75)))
-            text_p2 = self.font.render("Player 2", True, BRANCO)
+            text_p2 = self.font.render("Player 2", True, VERMELHO)
             self.screen.blit(text_p2, text_p2.get_rect(center=(self.largura//2, 325)))
             
             mouse_pos = pygame.mouse.get_pos()
@@ -289,6 +290,14 @@ class PowerupSelectionScreen:
         self.selected_powerup = None
         self.buttons = []
         
+        try:
+            self.powerup_bg = pygame.image.load("assets/Classes/Powerup_Background.png").convert_alpha()
+            self.powerup_bg = pygame.transform.scale(self.powerup_bg, screen.get_size())
+        except pygame.error:
+            self.powerup_bg = None
+
+        pygame.display.flip()
+
         button_width = 300
         button_height = 150
         spacing = 30
@@ -308,9 +317,12 @@ class PowerupSelectionScreen:
         running = True
         clock = pygame.time.Clock()
         while running:
-            self.screen.fill(PRETO)
-            
-            title_text = self.font.render(f"Jogador, {self.player.upper()} - Escolha um Powerup:", True, DOURADO)
+            if self.powerup_bg:
+                self.screen.blit(self.powerup_bg, (0, 0))
+            else:
+                self.screen.fill(PRETO)
+
+            title_text = self.font.render(f"Jogador, {self.player.upper()} - Escolha um Powerup:", True, VERMELHO)
             title_rect = title_text.get_rect(center=(self.screen.get_width()//2, 100))
             self.screen.blit(title_text, title_rect)
 
@@ -355,10 +367,10 @@ class Player:
         self.speed = speed
 
         # Configurações base
-        health_dict = {"Lebre": 80, "Raposa": 100, "Veado": 120}
-        attack_dict = {"Lebre": 8, "Raposa": 10, "Veado": 12}
-        move_range_dict = {"Lebre": 4, "Raposa": 3, "Veado": 2}
-        attack_range_dict = {"Lebre": 1, "Raposa": 1, "Veado": 1}
+        health_dict = {"Lebre": 80, "Bufo": 100, "Raposa": 120}
+        attack_dict = {"Lebre": 8, "Bufo": 10, "Raposa": 12}
+        move_range_dict = {"Lebre": 4, "Bufo": 3, "Raposa": 2}
+        attack_range_dict = {"Lebre": 1, "Bufo": 2, "Raposa": 3}
         
         self.base_health = health_dict[class_name]
         self.base_attack = attack_dict[class_name]
@@ -403,6 +415,7 @@ class Player:
                     self.dest_grid_x = new_grid_x
                     self.dest_grid_y = new_grid_y
                     self.moving = True
+                    self.stamina = True
                 return
 
     def update(self, dt):
@@ -448,7 +461,8 @@ class Player:
 
 def attack(attacker, defender):
     SOUNDS[attacker.class_name].play()
-    if abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range:
+    align = (attacker.grid_x == defender.grid_x or attacker.grid_y == defender.grid_y)
+    if abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range and align:
         damage = attacker.attack_damage
         defender.health -= damage
         defender.last_damage = damage
@@ -506,9 +520,9 @@ class World:
             self.mapa.append(linha)
         
         self.player_images = {
-            "Lebre": "assets/Classes/lebre_icon.png",
-            "Raposa": "assets/Classes/raposa_icon.png",
-            "Veado": "assets/Classes/veado_icon.png"
+            "Lebre": "assets/Classes/Lebre.png",
+            "Bufo": "assets/Classes/Bufo.png",
+            "Raposa": "assets/Classes/Raposa.png"
         }
         pos1 = (0, 0)
         pos2 = (self.x - 1, self.y - 1)
@@ -535,7 +549,7 @@ class World:
 
         for dx in range(-attack_range, attack_range + 1):
             for dy in range(-attack_range, attack_range + 1):
-                if abs(dx) + abs(dy) <= attack_range:
+                if (dx == 0 and abs(dy) <= attack_range) or (dy == 0 and abs(dx) <= attack_range):
                     x = px + dx
                     y = py + dy
                     if 0 <= x < self.x and 0 <= y < self.y:
@@ -626,6 +640,7 @@ class World:
                     elif event.key == pygame.K_SPACE:
                         if self.current_turn == "p1":
                             attack(self.player1, self.player2)
+                            self
                         else:
                             attack(self.player2, self.player1)
                     else:
@@ -758,7 +773,7 @@ class VictoryScreen:
             if self.final:
                 instruction = "Pressione R para recomeçar ou Q para sair"
             else:
-                instruction = "Pressione qualquer tecla para a próxima rodada..."
+                instruction = "Pressione qualquer tecla para a proxima rodada..."
             
             instr_text = self.font.render(instruction, True, BRANCO)
             instr_rect = instr_text.get_rect(center=(self.largura//2, self.altura//2 + 100))
@@ -831,7 +846,7 @@ class Game:
                     self.p2_score += 1
                     loser = "p1"
                 
-                final_victory = self.p1_score >= 2 or self.p2_score >= 2
+                final_victory = self.p1_score >= 5 or self.p2_score >= 5
                 
                 victory_screen = VictoryScreen(self.screen, self.font, winner, 
                                               self.p1_score, self.p2_score, final_victory)

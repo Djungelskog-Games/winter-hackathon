@@ -364,11 +364,11 @@ class PowerupSelectionScreen:
 
 # -------------------- Classes de Jogo --------------------
 class Player:
-    def __init__(self, image_path, start_grid_pos, speed, scale=1, class_name="Lebre", font=FONT, powerups=None):
+    def __init__(self, image_path, start_grid_pos, speed, scale=1, class_name="Lebre", font=None, powerups=None):
         try:
             full_image = pygame.image.load(image_path).convert_alpha()
         except pygame.error:
-            full_image = pygame.Surface((TILE_SIZE * scale, TILE_SIZE * scale))
+            full_image = pygame.Surface((150,150))
             full_image.fill(VERDE)
         self.sprite_scale_factor = scale * 0.45
         sprite_size = int(TILE_SIZE * scale * self.sprite_scale_factor)
@@ -425,17 +425,18 @@ class Player:
         self.last_damage = 0
         self.damage_display_time = 0
 
-    def handle_input(self, key, controls, grid_width, grid_height, other_player_pos, coor_pedras):
+    def handle_input(self, key, controls, grid_width, grid_height, other_player_pos, blocked_tiles):
         if not self.moving and self.moves_remaining > 0:
             if key in controls:
                 new_grid_x = self.grid_x + controls.get(key)[0]
                 new_grid_y = self.grid_y + controls.get(key)[1]
-                if (0 <= new_grid_x < grid_width and 0 <= new_grid_y < grid_height
-                    and (new_grid_x, new_grid_y) != other_player_pos and not (new_grid_x, new_grid_y) in coor_pedras):
+                if (0 <= new_grid_x < grid_width and 
+                    0 <= new_grid_y < grid_height and
+                    (new_grid_x, new_grid_y) != other_player_pos and
+                    (new_grid_x, new_grid_y) not in blocked_tiles):
                     self.dest_grid_x = new_grid_x
                     self.dest_grid_y = new_grid_y
                     self.moving = True
-                    self.stamina = True
                 return
 
     def update(self, dt):
@@ -463,7 +464,6 @@ class Player:
         
         if self.damage_display_time > 0:
             self.damage_display_time = max(0, self.damage_display_time - dt)
-
     def draw(self, display, offset_x, offset_y):
         tile_pixel_size = TILE_SIZE * SCALE
         tile_top_left_x = offset_x + self.pixel_x
@@ -479,53 +479,37 @@ class Player:
             text_rect = damage_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
             display.blit(damage_text, text_rect)
 
-def attack(attacker, defender, coor_pedras):
-    SOUNDS[attacker.class_name].play()
-    align = (attacker.grid_x == defender.grid_x or attacker.grid_y == defender.grid_y)
-    if abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range and align:
-        # Check for obstacles (pedras) between attacker and defender.
-        blocked = False
-        if attacker.grid_x == defender.grid_x:
-            # Vertical attack: iterate through the cells between the attacker and defender.
-            start = min(attacker.grid_y, defender.grid_y) + 1
-            end = max(attacker.grid_y, defender.grid_y)
-            for y in range(start, end):
-                if (attacker.grid_x, y) in coor_pedras:
-                    blocked = True
-                    break
-        elif attacker.grid_y == defender.grid_y:
-            # Horizontal attack: iterate through the cells between the attacker and defender.
-            start = min(attacker.grid_x, defender.grid_x) + 1
-            end = max(attacker.grid_x, defender.grid_x)
-            for x in range(start, end):
-                if (x, attacker.grid_y) in coor_pedras:
-                    blocked = True
-                    break
+def attack(attacker, defender, world):
+    path = world.get_line_points(attacker.grid_x, attacker.grid_y, defender.grid_x, defender.grid_y)
+    for point in path:
+        if point in world.stones:
+            return  # Ataque bloqueado por pedra
 
-        if blocked:
-            # If there is a pedra in the attack path, do not process the attack.
-            return
-
-        # Proceed with the attack since no obstacles block the path.
+    if abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range:
+        SOUNDS[attacker.class_name].play()
         damage = attacker.attack_damage
         defender.health -= damage
         defender.last_damage = damage
         defender.damage_display_time = 2000
-
+        
         if defender.health < 0:
             defender.health = 0
 
         delta_x = defender.grid_x - attacker.grid_x
         delta_y = defender.grid_y - attacker.grid_y
 
-        knockback_x = 1 if delta_x > 0 else (-1 if delta_x < 0 else 0)
-        knockback_y = 1 if delta_y > 0 else (-1 if delta_y < 0 else 0)
+        knockback_x = 0
+        knockback_y = 0
+        if delta_x != 0:
+            knockback_x = 1 if delta_x > 0 else -1
+        if delta_y != 0:
+            knockback_y = 1 if delta_y > 0 else -1
 
         new_x = defender.grid_x + knockback_x
         new_y = defender.grid_y + knockback_y
 
         if 0 <= new_x < SIZE_X and 0 <= new_y < SIZE_Y:
-            if (new_x, new_y) != (attacker.grid_x, attacker.grid_y):
+            if (new_x, new_y) != (attacker.grid_x, attacker.grid_y) and (new_x, new_y) not in world.stones:
                 defender.grid_x = new_x
                 defender.grid_y = new_y
                 defender.dest_grid_x = new_x
@@ -543,29 +527,25 @@ class World:
         self.display = display
         self.scale = scale
         self.mapa = []
-        self.coor_pedras = []
-        self.pedras_usadas = []
         self.screen_width = display.get_width()
         self.screen_height = display.get_height()
         self.key = None
-        self.pedras = (
-                    pygame.image.load("assets/Tiles/Pedra1.png").convert_alpha(),
-                    pygame.image.load("assets/Tiles/Pedra2.png").convert_alpha(),
-                    pygame.image.load("assets/Tiles/Pedra3.png").convert_alpha(),
-                    pygame.image.load("assets/Tiles/Pedra4.png").convert_alpha()
-                )
+        
+        # Gerar pedras no centro 5x5
+        self.stones = []
+        for _ in range(random.randint(3, 5)):
+            stone_x = random.randint(1, 5)
+            stone_y = random.randint(1, 5)
+            self.stones.append((stone_x, stone_y))
+
         try:
             self.bg_image = pygame.image.load("assets/World/Background.jpg").convert()
             self.bg_image = pygame.transform.scale(self.bg_image, self.display.get_size())
+            self.stone_image = pygame.image.load("assets/Tiles/Pedra4.png").convert_alpha()
         except pygame.error:
             self.bg_image = None
-        
-        for i in range(random.randint(5,9)):
-            pedra_x = random.randint(1, 5)
-            pedra_y = random.randint(1,5)
-            pedra_escolhida = random.choice(self.pedras)
-            self.coor_pedras.append((pedra_x, pedra_y))
-            self.pedras_usadas.append(pedra_escolhida)
+            self.stone_image = pygame.Surface((TILE_SIZE*scale, TILE_SIZE*scale))
+            self.stone_image.fill(CINZENTO)
         
         for i in range(y):
             linha = []
@@ -573,14 +553,12 @@ class World:
                 tile = random.choice(tilepack)
                 tile = pygame.transform.scale_by(tile, scale)
                 linha.append(tile)
-                    
             self.mapa.append(linha)
         
         self.player_images = {
-            "Lebre": "assets/Classes/Lebre.png",
-            "Bufo": "assets/Classes/Bufo.png",
-            "Raposa": "assets/Classes/Raposa.png",
-            "Urso": "assets/Classes/Urso.png"
+            "Lebre": "assets/Classes/lebre_icon.png",
+            "Raposa": "assets/Classes/raposa_icon.png",
+            "Veado": "assets/Classes/veado_icon.png"
         }
         pos1 = (0, 0)
         pos2 = (self.x - 1, self.y - 1)
@@ -594,42 +572,25 @@ class World:
         self.player1.moves_remaining = self.player1.move_range
         self.player2.moves_remaining = self.player2.move_range
         
-        
         pygame.mixer.music.load("assets/Sounds/song_batalha.wav")
         pygame.mixer.music.play(-1)
 
     def draw_attack_range(self, offset_x, offset_y):
         overlay = pygame.Surface((self.x * TILE_SIZE * SCALE, self.y * TILE_SIZE * SCALE), pygame.SRCALPHA)
-    
+        
         current_player = self.player1 if self.current_turn == "p1" else self.player2
         attack_range = current_player.attack_range
         px, py = current_player.grid_x, current_player.grid_y
 
         for dx in range(-attack_range, attack_range + 1):
             for dy in range(-attack_range, attack_range + 1):
-                if (dx == 0 and abs(dy) <= attack_range) or (dy == 0 and abs(dx) <= attack_range):
+                if abs(dx) + abs(dy) <= attack_range:
                     x = px + dx
                     y = py + dy
-                    if 0 <= x < self.x and 0 <= y < self.y:
-                        path_clear = True
-                    # Check vertical path (dx == 0)
-                        if dx == 0:
-                        # Loop over all cells from player's y to target y (inclusive)
-                            for intermediate_y in range(min(py, y), max(py, y) + 1):
-                                if (px, intermediate_y) in self.coor_pedras:
-                                    path_clear = False
-                                    break
-                    # Check horizontal path (dy == 0)
-                        elif dy == 0:
-                            for intermediate_x in range(min(px, x), max(px, x) + 1):
-                                if (intermediate_x, py) in self.coor_pedras:
-                                    path_clear = False
-                                    break
-                        if path_clear:
-                            pos_x = x * TILE_SIZE * SCALE
-                            pos_y = y * TILE_SIZE * SCALE
-                            pygame.draw.rect(overlay, VERMELHO, (pos_x, pos_y, TILE_SIZE * SCALE, TILE_SIZE * SCALE))
-
+                    if 0 <= x < self.x and 0 <= y < self.y and (x, y) not in self.stones:
+                        pos_x = x * TILE_SIZE * SCALE
+                        pos_y = y * TILE_SIZE * SCALE
+                        pygame.draw.rect(overlay, VERMELHO, (pos_x, pos_y, TILE_SIZE*SCALE, TILE_SIZE*SCALE))
 
         self.display.blit(overlay, (offset_x, offset_y))
 
@@ -689,14 +650,15 @@ class World:
         text_rect = health_text.get_rect(center=(health_x + health_width//2, health_y + health_height//2))
         display.blit(health_text, text_rect)
 
+
     def draw_map(self):
         winner = None
         running = True
         clock = pygame.time.Clock()
         player1_controls = {pygame.K_w: (0, -1), pygame.K_a: (-1, 0), pygame.K_s: (0, 1), pygame.K_d: (1, 0)}
         player2_controls = {pygame.K_UP: (0, -1), pygame.K_LEFT: (-1, 0), pygame.K_DOWN: (0, 1), pygame.K_RIGHT: (1, 0)}
-        font = pygame.font.Font(FONT, 40)
-        controls_font = pygame.font.Font(FONT, 28)
+        font = pygame.font.Font(None, 36)
+        controls_font = pygame.font.Font(None, 24)
 
         while running:
             dt = clock.tick(60)
@@ -713,23 +675,19 @@ class World:
                             self.player2.moves_remaining = 0
                     elif event.key == pygame.K_SPACE:
                         if self.current_turn == "p1":
-                            if self.player1.stamina:
-                                attack(self.player1, self.player2, self.coor_pedras)
-                                self.player1.stamina = False
+                            attack(self.player1, self.player2, self)
                         else:
-                            if self.player2.stamina:
-                                attack(self.player2, self.player1, self.coor_pedras)
-                                self.player2.stamina = False
+                            attack(self.player2, self.player1, self)
                     else:
                         self.key = event.key
                         SOUNDS['butao'].play()
 
             if self.current_turn == "p1":
                 other_pos = (self.player2.grid_x, self.player2.grid_y)
-                self.player1.handle_input(self.key, player1_controls, self.x, self.y, other_pos, self.coor_pedras)
+                self.player1.handle_input(self.key, player1_controls, self.x, self.y, other_pos, self.stones)
             else:
                 other_pos = (self.player1.grid_x, self.player1.grid_y)
-                self.player2.handle_input(self.key, player2_controls, self.x, self.y, other_pos, self.coor_pedras)
+                self.player2.handle_input(self.key, player2_controls, self.x, self.y, other_pos, self.stones)
 
             self.player1.update(dt)
             self.player2.update(dt)
@@ -767,45 +725,32 @@ class World:
             offset_x = (display_width - map_width) // 2
             offset_y = (display_height - map_height) // 2
 
-            i = 0
             for y_idx, row in enumerate(self.mapa):
                 for x_idx, tile in enumerate(row):
                     pos_x_tile = offset_x + x_idx * self.tilesize * self.scale
                     pos_y_tile = offset_y + y_idx * self.tilesize * self.scale
                     self.display.blit(tile, (pos_x_tile, pos_y_tile))
-
-                    if (x_idx, y_idx) in self.coor_pedras:
-                        stone_img = pygame.transform.scale(self.pedras_usadas[i], (TILE_SIZE * self.scale, TILE_SIZE * self.scale))
+                    
+                    if (x_idx, y_idx) in self.stones:
+                        stone_img = pygame.transform.scale(self.stone_image, 
+                                                          (TILE_SIZE*self.scale, TILE_SIZE*self.scale))
                         self.display.blit(stone_img, (pos_x_tile, pos_y_tile))
-                        i += 1
-                        
-
 
             self.draw_attack_range(offset_x, offset_y)
 
-            # Desenha stats dos jogadores
             self.draw_player_stats(self.display, offset_x, offset_y, self.player1, "left")
             self.draw_player_stats(self.display, offset_x, offset_y, self.player2, "right")
 
             self.player1.draw(self.display, offset_x, offset_y)
             self.player2.draw(self.display, offset_x, offset_y)
 
-            turn_text = font.render(f"TURNO DO JOGADOR: {self.current_turn.upper()}", True, DOURADO)
-            text_rect = turn_text.get_rect(center=(self.screen_width//2, 70))
-            self.display.blit(turn_text, text_rect)
-            
-            controls_y = self.screen_height - 100
-            controls = [
-                "WASD - Movimentar Jogador 1",
-                "SETAS - Movimentar Jogador 2",
-                "SPACE - Atacar",
-                "ENTER - Finalizar Turno"
-            ]
-            
-            for i, text in enumerate(controls):
-                control_text = controls_font.render(text, True, DOURADO)
-                text_rect = control_text.get_rect(center=(self.screen_width//2, controls_y + i*25))
-                self.display.blit(control_text, text_rect)
+            turn_text = font.render(f"Turn: {self.current_turn}", True, BRANCO)
+            self.display.blit(turn_text, (10, 10))
+
+            space_text = controls_font.render("Espaço para atacar", True, BRANCO)
+            enter_text = controls_font.render("Enter para passar turno", True, BRANCO)
+            self.display.blit(space_text, (10, self.screen_height - 60))
+            self.display.blit(enter_text, (10, self.screen_height - 30))
 
             pygame.display.flip()
         
