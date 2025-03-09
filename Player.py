@@ -1,5 +1,5 @@
 import pygame
-from constants import SCALE, TILE_SIZE, SIZE_X, SIZE_Y, FONT, SOUNDS, VERDE
+from constants import SCALE, TILE_SIZE, SIZE_X, SIZE_Y, FONT, SOUNDS, VERDE, VERMELHO
 
 
 class Player:
@@ -62,6 +62,9 @@ class Player:
                 self.attack_range += p['value']
             elif p['type'] == 'regeneration':
                 self.regeneration += p['value']
+            elif p['type'] == 'armor':
+                self.max_health += p['value']['health']
+                self.move_range += p['value']['move_range']
 
         # Define a vida atual e os movimentos restantes
         self.health = self.max_health
@@ -131,7 +134,7 @@ class Player:
         
         # Exibe o dano recebido (se houver)
         if self.damage_display_time > 0:
-            damage_text = self.font.render(f"-{self.last_damage}", True, (255, 0, 0))
+            damage_text = self.font.render(f"-{self.last_damage}", True, VERMELHO)
             text_rect = damage_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
             display.blit(damage_text, text_rect)
 

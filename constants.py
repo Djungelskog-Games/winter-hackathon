@@ -20,13 +20,15 @@ FONT = "assets\Font\Pixeboy.ttf"
 # Código do Easter Egg
 SECRET = (pygame.K_UP, pygame.K_UP, pygame.K_DOWN, pygame.K_DOWN, pygame.K_LEFT, 
           pygame.K_RIGHT, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_b, pygame.K_a, pygame.K_RETURN)
+
 # PowerUps das Personagens
 POWERUPS = [
     {'type': 'health', 'name': ' Queijada Especial', 'description': '+20 Vida Maxima', 'value': 20, 'image': 'assets/Powerups/Queijada.png'},
     {'type': 'attack', 'name': 'Travesseiro Magico', 'description': '+3 Ataque', 'value': 3, 'image': 'assets/Powerups/Travesseiro.png'},
     {'type': 'move_range', 'name': 'Faca da Chinada', 'description': '+1 Movimento', 'value': 1, 'image': 'assets/Powerups/Faca.png'},
     {'type': 'attack_range', 'name': 'Pedra da Calcada', 'description': '+1 Alcance de Ataque', 'value': 1, 'image': 'assets/Powerups/Pedra.png'},
-    {'type': 'regeneration', 'name': 'Betty', 'description': 'Cura 5 de vida por turno', 'value': 5, 'image': 'assets/Powerups/Betty.png'}
+    {'type': 'regeneration', 'name': 'Betty', 'description': 'Cura 5 de vida por turno', 'value': 5, 'image': 'assets/Powerups/Betty.png'},
+    {'type': 'armor', 'name': 'Armadura de Mouro', 'description': '+40 Vida Maxima, -1 Movimento', 'value': {'health': 40, 'move_range': -1}, 'image': 'assets/Powerups/armor.png'}
 ]
 
 pygame.mixer.init()

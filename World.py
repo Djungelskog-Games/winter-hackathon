@@ -2,7 +2,7 @@ import pygame
 import sys
 import random
 import time
-from constants import TILE_SIZE, SCALE, PRETO, DOURADO, BRANCO, VERMELHO, CINZENTO, FONT, SOUNDS, VERDE
+from constants import TILE_SIZE, SCALE, PRETO, DOURADO, BRANCO, VERMELHO, FONT, SOUNDS, VERDE
 from Player import Player, attack
 
 VERDE = (0, 255, 0)
