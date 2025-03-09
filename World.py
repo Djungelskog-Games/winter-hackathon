@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+import time
 from constants import TILE_SIZE, SCALE, PRETO, DOURADO, BRANCO, VERMELHO, CINZENTO, FONT, SOUNDS, VERDE
 from Player import Player, attack
 
@@ -10,6 +11,7 @@ class World:
     def __init__(self, x, y, tilepack, tilesize, display, scale, player1_class, player2_class, font, p1_powerups=None, p2_powerups=None):
         # Toca o som de botão ao iniciar
         SOUNDS['botao'].play()
+        time.sleep(0.3)
         
         # Inicializa os atributos da classe
         self.x = x  # Largura do mapa em tiles
@@ -80,8 +82,7 @@ class World:
         self.player2.moves_remaining = self.player2.move_range
         
         # Carrega e toca a música de batalha em loop
-        pygame.mixer.music.load("assets/Sounds/song_batalha.wav")
-        pygame.mixer.music.play(-1)
+        SOUNDS['batalha'].play(-1)
 
     def draw_attack_range(self, offset_x, offset_y):
         # Cria uma superfície para desenhar o alcance de ataque
@@ -167,7 +168,7 @@ class World:
         health_y = panel_y + y_offset
         
         # Fundo da barra de vida
-        pygame.draw.rect(display, CINZENTO, (health_x, health_y, health_width, health_height))
+        pygame.draw.rect(display, VERMELHO, (health_x, health_y, health_width, health_height))
         # Vida atual
         fill_width = (player.health / player.max_health) * health_width
         pygame.draw.rect(display, VERDE, (health_x, health_y, fill_width, health_height))
@@ -249,11 +250,21 @@ class World:
 
             # Verifica se algum jogador morreu
             if self.player1.health <= 0:
+                SOUNDS['batalha'].stop()
                 SOUNDS['morrer'].play()
+                self.draw_player_stats(self.display, offset_x, offset_y, self.player1, "left")
+                self.draw_player_stats(self.display, offset_x, offset_y, self.player2, "right")
+                pygame.display.flip()
+                time.sleep(0.7)
                 winner = "p2"
                 running = False
             elif self.player2.health <= 0:
+                SOUNDS['batalha'].stop()
                 SOUNDS['morrer'].play()
+                self.draw_player_stats(self.display, offset_x, offset_y, self.player1, "left")
+                self.draw_player_stats(self.display, offset_x, offset_y, self.player2, "right")
+                pygame.display.flip()
+                time.sleep(0.7)
                 winner = "p1"
                 running = False
 

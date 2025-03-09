@@ -40,4 +40,6 @@ SOUNDS = {'vencer': pygame.mixer.Sound('assets/Sounds/vencer.wav'),
            'Lebre': pygame.mixer.Sound('assets/Sounds/lebre_ataque.wav'),
            'Urso': pygame.mixer.Sound('assets/Sounds/urso_ataque.wav'),
            'escolher': pygame.mixer.Sound('assets/Sounds/escolha_personagem.wav'),
-           'djungelskog': pygame.mixer.Sound('assets/Sounds/Djungelskog.wav'),}
+           'djungelskog': pygame.mixer.Sound('assets/Sounds/Djungelskog.wav'),
+           'menu': pygame.mixer.Sound('assets/Sounds/song_mainmenu.wav'),
+           'batalha': pygame.mixer.Sound('assets/Sounds/song_batalha.wav')}

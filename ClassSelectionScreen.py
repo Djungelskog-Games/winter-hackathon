@@ -1,6 +1,7 @@
 import pygame
 from constants import BRANCO, PRETO, SOUNDS, SECRET, VERMELHO
 import sys
+import time
 from BotaoIcone import BotaoIcone
 
 # Classe que representa a tela de seleção de classes
@@ -137,6 +138,7 @@ class ClassSelectionScreen:
                     self.handle_class_selection("p2", "Urso")
                     self.confirm_selection()
                     SOUNDS['djungelskog'].play()
+                    time.sleep(2)
                 # Lida com eventos de botões
                 elif event.type == pygame.KEYDOWN:
                     if event.key == SECRET[self.secret_counter]:

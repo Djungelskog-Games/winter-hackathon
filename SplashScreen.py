@@ -1,5 +1,5 @@
 import pygame
-from constants import PRETO, BRANCO, FONT, VERMELHO 
+from constants import PRETO, FONT, VERMELHO, SOUNDS 
 import math
 import sys
 
@@ -12,8 +12,7 @@ class SplashScreen:
         self.altura = altura  # Altura do ecrã
         
         # Carrega e toca a música de fundo em loop
-        pygame.mixer.music.load("assets/Sounds/song_mainmenu.wav")
-        pygame.mixer.music.play(-1)
+        SOUNDS['menu'].play(-1)
 
     def run(self):
         try:
@@ -77,5 +76,5 @@ class SplashScreen:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    pygame.mixer.music.stop()  # Para a música de fundo
+                    SOUNDS['menu'].stop()  # Para a música de fundo
                     return  # Sai da função e encerra o ecrã de splash
