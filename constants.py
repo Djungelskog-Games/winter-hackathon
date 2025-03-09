@@ -28,7 +28,8 @@ POWERUPS = [
     {'type': 'move_range', 'name': 'Faca da Chinada', 'description': '+1 Movimento', 'value': 1, 'image': 'assets/Powerups/Faca.png'},
     {'type': 'attack_range', 'name': 'Pedra da Calcada', 'description': '+1 Alcance de Ataque', 'value': 1, 'image': 'assets/Powerups/Pedra.png'},
     {'type': 'regeneration', 'name': 'Betty', 'description': 'Cura 5 de vida por turno', 'value': 5, 'image': 'assets/Powerups/Betty.png'},
-    {'type': 'armor', 'name': 'Armadura de Mouro', 'description': '+40 Vida Maxima, -1 Movimento', 'value': {'health': 40, 'move_range': -1}, 'image': 'assets/Powerups/armor.png'}
+    {'type': 'armor', 'name': 'Armadura de Mouro', 'description': '+40 Vida Maxima, -1 Movimento', 'value': {'health': 40, 'move_range': -1}, 'image': 'assets/Powerups/armor.png'},
+    {'type': 'lifesteal', 'name': 'Bruxaria Lunar', 'description': 'Recupera 20% do dano causado em vida', 'value': 0.2, 'image': 'assets/Powerups/Vampire.png'}
 ]
 
 pygame.mixer.init()
