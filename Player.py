@@ -88,6 +88,8 @@ class Player:
         self.life_stolen_amount = health_restored
         if self.lifesteal_percentage > 0:
             self.life_stolen_time = 2000
+        if self.health > self.max_health:
+            self.health = self.max_health
 
     def handle_input(self, key, controls, grid_width, grid_height, other_player_pos, coor_pedras):
         # Processa a entrada do jogador para movimentação
@@ -155,7 +157,7 @@ class Player:
             display.blit(damage_text, text_rect)
         
         # Exibe o lifesteal (se houver)
-        if self.life_stolen > 0:
+        if self.life_stolen_time > 0:
             life_stolen_text = self.font.render(f"+{self.life_stolen_amount}", True, VERDE)
             text_rect = life_stolen_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
             display.blit(life_stolen_text, text_rect)
