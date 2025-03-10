@@ -79,11 +79,15 @@ class Player:
         self.font = font if font else pygame.font.Font(FONT, 24)
         self.last_damage = 0  # Último dano recebido
         self.damage_display_time = 0  # Tempo de exibição do dano
+        self.life_stolen_time = 0
 
     def apply_lifesteal(self, damage_dealt):
         damage_dealt = self.attack_damage
         health_restored = math.ceil(damage_dealt * self.lifesteal_percentage) # O math.ceil arredonda para cima (por exemplo, o bufo ataca 13, como 13*0.2 = 2.6, o bufo recupera 3 de vida e não 2)
         self.health += health_restored
+        self.life_stolen_amount = health_restored
+        if self.lifesteal_percentage > 0:
+            self.life_stolen_time = 2000
 
     def handle_input(self, key, controls, grid_width, grid_height, other_player_pos, coor_pedras):
         # Processa a entrada do jogador para movimentação
@@ -130,6 +134,9 @@ class Player:
         if self.damage_display_time > 0:
             self.damage_display_time = max(0, self.damage_display_time - dt)
 
+        if self.life_stolen_time > 0:
+            self.life_stolen_time = max(0, self.life_stolen_time - dt)
+
     def draw(self, display, offset_x, offset_y):
         # Desenha o jogador no ecrã
         tile_pixel_size = TILE_SIZE * SCALE
@@ -146,6 +153,12 @@ class Player:
             damage_text = self.font.render(f"-{self.last_damage}", True, VERMELHO)
             text_rect = damage_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
             display.blit(damage_text, text_rect)
+        
+        # Exibe o lifesteal (se houver)
+        if self.life_stolen > 0:
+            life_stolen_text = self.font.render(f"+{self.life_stolen_amount}", True, VERDE)
+            text_rect = life_stolen_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
+            display.blit(life_stolen_text, text_rect)
 
 def attack(attacker, defender, coor_pedras):
     # Toca o som de ataque da classe do atacante
@@ -182,7 +195,7 @@ def attack(attacker, defender, coor_pedras):
         defender.health -= damage
         defender.last_damage = damage
         defender.damage_display_time = 2000  # Exibe o dano por 2 segundos
-        
+
         attacker.apply_lifesteal(damage)  # Aplica o lifesteal
 
         if defender.health < 0:
