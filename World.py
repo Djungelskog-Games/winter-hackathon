@@ -239,12 +239,16 @@ class World:
                 if self.player1.moves_remaining == 0:
                     # Regenera a vida do jogador 1 e passa o turno para o jogador 2
                     self.player1.health = min(self.player1.health + self.player1.regeneration, self.player1.max_health)
+                    if self.player1.regeneration > 0 and self.player1.health < self.player1.max_health:
+                        self.player1.regeneration_display_time = 2000
                     self.current_turn = "p2"
                     self.player2.moves_remaining = self.player2.move_range
             elif self.current_turn == "p2" and not self.player2.moving:
                 if self.player2.moves_remaining == 0:
                     # Regenera a vida do jogador 2 e passa o turno para o jogador 1
                     self.player2.health = min(self.player2.health + self.player2.regeneration, self.player2.max_health)
+                    if self.player2.regeneration > 0 and self.player2.health < self.player2.max_health:
+                        self.player2.regeneration_display_time = 2000
                     self.current_turn = "p1"
                     self.player1.moves_remaining = self.player1.move_range
 

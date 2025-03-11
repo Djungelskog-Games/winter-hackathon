@@ -80,6 +80,7 @@ class Player:
         self.last_damage = 0  # Último dano recebido
         self.damage_display_time = 0  # Tempo de exibição do dano
         self.life_stolen_time = 0
+        self.regeneration_display_time = 0
 
     def apply_lifesteal(self, damage_dealt):
         damage_dealt = self.attack_damage
@@ -139,6 +140,9 @@ class Player:
         if self.life_stolen_time > 0:
             self.life_stolen_time = max(0, self.life_stolen_time - dt)
 
+        if self.regeneration > 0 and self.regeneration_display_time > 0 and self.health < self.max_health:
+            self.regeneration_display_time = max(0, self.regeneration_display_time - dt)
+
     def draw(self, display, offset_x, offset_y):
         # Desenha o jogador no ecrã
         tile_pixel_size = TILE_SIZE * SCALE
@@ -161,6 +165,12 @@ class Player:
             life_stolen_text = self.font.render(f"+{self.life_stolen_amount}", True, VERDE)
             text_rect = life_stolen_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
             display.blit(life_stolen_text, text_rect)
+
+        # Exibe a regeneração (se houver)
+        if self.regeneration_display_time > 0:
+            regeneration_text = self.font.render(f"+{self.regeneration}", True, VERDE)
+            text_rect = regeneration_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
+            display.blit(regeneration_text, text_rect)
 
 def attack(attacker, defender, coor_pedras):
     # Toca o som de ataque da classe do atacante
