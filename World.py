@@ -2,7 +2,7 @@ import pygame
 import sys
 import random
 import time
-from constants import TILE_SIZE, SCALE, PRETO, DOURADO, BRANCO, VERMELHO, FONT, SOUNDS, VERDE
+from constants import TILE_SIZE, SCALE, PRETO, DOURADO, BRANCO, VERMELHO, FONT, SOUNDS, VERDE, AZUL
 from Player import Player, attack
 
 VERDE = (0, 255, 0)
@@ -93,6 +93,9 @@ class World:
         attack_range = current_player.attack_range
         px, py = current_player.grid_x, current_player.grid_y
 
+        # Define a cor para o alcance de ataque, dependendo do jogador atual
+        attack_color = VERMELHO if self.current_turn == "p1" else AZUL
+
         # Desenha o alcance de ataque
         for dx in range(-attack_range, attack_range + 1):
             for dy in range(-attack_range, attack_range + 1):
@@ -115,7 +118,7 @@ class World:
                         if path_clear:
                             pos_x = x * TILE_SIZE * SCALE
                             pos_y = y * TILE_SIZE * SCALE
-                            pygame.draw.rect(overlay, VERMELHO, (pos_x, pos_y, TILE_SIZE * SCALE, TILE_SIZE * SCALE))
+                            pygame.draw.rect(overlay, attack_color, (pos_x, pos_y, TILE_SIZE * SCALE, TILE_SIZE * SCALE))
 
         # Desenha a superfície no ecrã
         self.display.blit(overlay, (offset_x, offset_y))

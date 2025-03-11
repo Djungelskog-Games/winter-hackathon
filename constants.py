@@ -5,7 +5,7 @@ os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # Definições globais de cores e tamanhos
 VERDE = (0, 255, 0)
-AZUL = (0, 0, 255)
+AZUL = (0, 0, 255, 50)
 CINZENTO = (128, 128, 128)
 DOURADO = (218, 165, 32)
 PRETO = (0, 0, 0)
