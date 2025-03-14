@@ -30,16 +30,18 @@ class Player:
         self.speed = speed  # Velocidade de movimento
 
         # Configurações base para cada classe
-        health_dict = {"Lebre": 40, "Bufo": 50, "Raposa": 60, "Urso": 500}
-        attack_dict = {"Lebre": 8, "Bufo": 10, "Raposa": 12, "Urso": 50 }
-        move_range_dict = {"Lebre": 4, "Bufo": 3, "Raposa": 2, "Urso": 5}
-        attack_range_dict = {"Lebre": 1, "Bufo": 2, "Raposa": 3, "Urso": 4}
+        health_dict = {"Lebre": 40, "Bufo": 50, "Raposa": 60, "Urso": 500, "Arqueiro": 30}
+        attack_dict = {"Lebre": 8, "Bufo": 10, "Raposa": 12, "Urso": 50, "Arqueiro": 10}
+        move_range_dict = {"Lebre": 4, "Bufo": 3, "Raposa": 2, "Urso": 5, "Arqueiro": 5}
+        attack_range_dict = {"Lebre": 1, "Bufo": 2, "Raposa": 3, "Urso": 4, "Arqueiro": 6}
+        min_attack_range_dict = {"Lebre": 0, "Bufo": 0, "Raposa": 0, "Urso": 0, "Arqueiro": 4}
         
         # Define os atributos base com base na classe
         self.base_health = health_dict[class_name]
         self.base_attack = attack_dict[class_name]
         self.base_move_range = move_range_dict[class_name]
         self.base_attack_range = attack_range_dict[class_name]
+        self.base_min_attack_range = min_attack_range_dict[class_name]
         self.base_speed = speed
 
         # Aplica os powerups (se houver)
@@ -47,6 +49,7 @@ class Player:
         self.attack_damage = self.base_attack
         self.move_range = self.base_move_range
         self.attack_range = self.base_attack_range
+        self.min_attack_range = self.base_min_attack_range
         self.regeneration = 0  # Regeneração de vida por turno
         self.lifesteal_percentage = 0 # % de vida recuperada ao atacar
 
@@ -178,7 +181,7 @@ def attack(attacker, defender, coor_pedras):
     
     # Verifica se o ataque está alinhado (horizontal ou vertical)
     align = (attacker.grid_x == defender.grid_x or attacker.grid_y == defender.grid_y)
-    if abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range and align:
+    if abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range and abs(attacker.grid_x - defender.grid_x) + abs(attacker.grid_y - defender.grid_y) >= attacker.min_attack_range and align:
         # Verifica se há pedras bloqueando o caminho do ataque
         blocked = False
         if attacker.grid_x == defender.grid_x:

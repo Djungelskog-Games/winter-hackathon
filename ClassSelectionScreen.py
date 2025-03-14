@@ -2,6 +2,7 @@ import pygame
 from constants import BRANCO, PRETO, SOUNDS, SECRET, VERMELHO
 import sys
 import time
+from Player import Player
 from BotaoIcone import BotaoIcone
 
 # Classe que representa a tela de seleção de classes
@@ -28,26 +29,32 @@ class ClassSelectionScreen:
             self.bg_image = None
         # Inicializa os botões de seleção de classes
         self.icon_spacing = 250
-        self.base_x = self.largura // 2
+        self.base_x = self.largura // 2 + 120
         self.player1_y = 200
         self.player2_y = 450
         # Inicializa os botões de seleção de classes
         self.buttons_p1 = [
+            BotaoIcone(self.base_x - 2 * self.icon_spacing, self.player1_y, 
+               "assets/Classes/archer.png", "Arqueiro", self.handle_class_selection, "p1"),
             BotaoIcone(self.base_x - self.icon_spacing, self.player1_y, 
-                       "assets/Classes/Lebre.png", "Lebre", self.handle_class_selection, "p1"),
+               "assets/Classes/Lebre.png", "Lebre", self.handle_class_selection, "p1"),
             BotaoIcone(self.base_x, self.player1_y, 
-                       "assets/Classes/Bufo.png", "Bufo", self.handle_class_selection, "p1"),
+               "assets/Classes/Bufo.png", "Bufo", self.handle_class_selection, "p1"),
             BotaoIcone(self.base_x + self.icon_spacing, self.player1_y, 
-                       "assets/Classes/Raposa.png", "Raposa", self.handle_class_selection, "p1")    
+               "assets/Classes/Raposa.png", "Raposa", self.handle_class_selection, "p1")   
         ]
+
         self.buttons_p2 = [
+            BotaoIcone(self.base_x - 2 * self.icon_spacing, self.player2_y, 
+                "assets/Classes/archer.png", "Arqueiro", self.handle_class_selection, "p2"),
             BotaoIcone(self.base_x - self.icon_spacing, self.player2_y, 
-                       "assets/Classes/Lebre.png", "Lebre", self.handle_class_selection, "p2"),
+                "assets/Classes/Lebre.png", "Lebre", self.handle_class_selection, "p2"),
             BotaoIcone(self.base_x, self.player2_y, 
-                       "assets/Classes/Bufo.png", "Bufo", self.handle_class_selection, "p2"),
+                "assets/Classes/Bufo.png", "Bufo", self.handle_class_selection, "p2"),
             BotaoIcone(self.base_x + self.icon_spacing, self.player2_y, 
-                       "assets/Classes/Raposa.png", "Raposa", self.handle_class_selection, "p2")
+                "assets/Classes/Raposa.png", "Raposa", self.handle_class_selection, "p2")
         ]
+
         self.confirm_button = BotaoIcone(self.largura//2, self.altura - 100, 
                                          "assets/Classes/confirm_button.png", "Confirmar", 
                                          lambda p, c: self.confirm_selection(), "confirm", (700, 90))
@@ -55,7 +62,8 @@ class ClassSelectionScreen:
         self.stats = {
             "Lebre": {"Vida": 40, "Ataque": 8, "Movimento": 4, "Alcance": 1},
             "Bufo": {"Vida": 50, "Ataque": 10, "Movimento": 3, "Alcance": 2},
-            "Raposa": {"Vida": 60, "Ataque": 12, "Movimento": 2, "Alcance": 3}
+            "Raposa": {"Vida": 60, "Ataque": 12, "Movimento": 2, "Alcance": 3},
+            "Arqueiro": {"Vida": 30, "Ataque": 6, "Movimento": 5, "Alcance": 6, "Alcance Minimo": 4}
         }
         self.hovered_class = None
     # Atualiza o estado do botão de confirmação
@@ -77,7 +85,11 @@ class ClassSelectionScreen:
         if self.hovered_class:
             stats = self.stats[self.hovered_class]
             tooltip_width = 200
-            tooltip_height = 130
+            if self.stats[self.hovered_class].get("Alcance Minimo"):
+                tooltip_width = 230
+                tooltip_height = 155
+            else:
+                tooltip_height = 130
 
             x, y = pygame.mouse.get_pos()
             x += 20
