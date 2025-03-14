@@ -87,7 +87,7 @@ class Player:
 
     def apply_lifesteal(self, damage_dealt):
         damage_dealt = self.attack_damage
-        health_restored = math.ceil(damage_dealt * self.lifesteal_percentage) # O math.ceil arredonda para cima (por exemplo, o bufo ataca 13, como 13*0.2 = 2.6, o bufo recupera 3 de vida e não 2)
+        health_restored = math.floor(damage_dealt * self.lifesteal_percentage + 0.5) # O math.ceil arredonda para cima (por exemplo, o bufo ataca 13, como 13*0.2 = 2.6, o bufo recupera 3 de vida e não 2)
         self.health += health_restored
         self.life_stolen_amount = health_restored
         if self.lifesteal_percentage > 0:
