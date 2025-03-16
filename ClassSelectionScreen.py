@@ -63,7 +63,7 @@ class ClassSelectionScreen:
             "Lebre": {"Vida": 40, "Ataque": 8, "Movimento": 4, "Alcance": 1},
             "Bufo": {"Vida": 50, "Ataque": 10, "Movimento": 3, "Alcance": 2},
             "Raposa": {"Vida": 60, "Ataque": 12, "Movimento": 2, "Alcance": 3},
-            "Arqueiro": {"Vida": 30, "Ataque": 10, "Movimento": 5, "Alcance": 6, "Alcance Minimo": 4}
+            "Arqueiro": {"Vida": 30, "Ataque": 10, "Movimento": 5, "Alcance": 5, "Alcance Minimo": 4}
         }
         self.hovered_class = None
     # Atualiza o estado do botão de confirmação

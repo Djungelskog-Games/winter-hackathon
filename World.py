@@ -166,7 +166,7 @@ class World:
         y_offset += 30
         
         if player.class_name == "Arqueiro":    # Desenha o alcance
-            range_text = stats_font.render(f"Alcance: 4-6", True, BRANCO)
+            range_text = stats_font.render(f"Alcance: {player.min_attack_range} - {player.attack_range}", True, BRANCO)
             display.blit(range_text, (panel_x + 20, panel_y + y_offset))
             y_offset += 30
         else:

@@ -33,7 +33,7 @@ class Player:
         health_dict = {"Lebre": 40, "Bufo": 50, "Raposa": 60, "Urso": 500, "Arqueiro": 30}
         attack_dict = {"Lebre": 8, "Bufo": 10, "Raposa": 12, "Urso": 50, "Arqueiro": 10}
         move_range_dict = {"Lebre": 4, "Bufo": 3, "Raposa": 2, "Urso": 5, "Arqueiro": 5}
-        attack_range_dict = {"Lebre": 1, "Bufo": 2, "Raposa": 3, "Urso": 4, "Arqueiro": 6}
+        attack_range_dict = {"Lebre": 1, "Bufo": 2, "Raposa": 3, "Urso": 4, "Arqueiro": 5}
         min_attack_range_dict = {"Lebre": 0, "Bufo": 0, "Raposa": 0, "Urso": 0, "Arqueiro": 4}
         
         # Define os atributos base com base na classe
