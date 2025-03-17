@@ -16,6 +16,7 @@ SIZE_X = 7
 SIZE_Y = 7
 SCALE = 2
 FONT = "assets\Font\Pixeboy.ttf"
+FONT2 = "assets\Font\BaiJamjuree-Bold.ttf"
 
 # Código do Easter Egg
 SECRET = (pygame.K_UP, pygame.K_UP, pygame.K_DOWN, pygame.K_DOWN, pygame.K_LEFT, 

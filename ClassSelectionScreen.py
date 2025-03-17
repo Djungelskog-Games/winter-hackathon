@@ -1,5 +1,5 @@
 import pygame
-from constants import BRANCO, PRETO, SOUNDS, SECRET, VERMELHO
+from constants import BRANCO, PRETO, SOUNDS, SECRET, VERMELHO, AZUL
 import sys
 import time
 from Player import Player
@@ -18,7 +18,10 @@ class ClassSelectionScreen:
         self.selected_p2 = None
         self.confirm_enabled = False
         self.secret_counter = 0
-        # Inicializa a tela do pygame
+        self.animation_offset = 0
+        self.animation_speed = 0.05
+
+        # Inicializa o ecrã do pygame
         self.screen = pygame.display.set_mode((self.largura, self.altura))
         pygame.display.set_caption("")
         # Carrega a imagem de fundo
@@ -66,6 +69,7 @@ class ClassSelectionScreen:
             "Arqueiro": {"Vida": 30, "Ataque": 10, "Movimento": 5, "Alcance": 5, "Alcance Minimo": 4}
         }
         self.hovered_class = None
+
     # Atualiza o estado do botão de confirmação
     def update_confirm_status(self):
         self.confirm_enabled = (self.selected_p1 is not None) and (self.selected_p2 is not None)
@@ -80,11 +84,12 @@ class ClassSelectionScreen:
     def confirm_selection(self):
         if self.confirm_enabled:
             self.running = False
+
     # Desenha a dica de ferramenta
     def draw_tooltip(self):
         if self.hovered_class:
             stats = self.stats[self.hovered_class]
-            tooltip_width = 200
+            tooltip_width = 170
             if self.stats[self.hovered_class].get("Alcance Minimo"):
                 tooltip_width = 230
                 tooltip_height = 155
@@ -106,7 +111,10 @@ class ClassSelectionScreen:
                 tooltip_surface.blit(text, (10, y_offset))
                 y_offset += 25
             
-            self.screen.blit(tooltip_surface, (x, y))
+            if self.hovered_class == "Raposa":
+                self.screen.blit(tooltip_surface, (x - 200, y))
+            else:
+                self.screen.blit(tooltip_surface, (x, y))
     # Executa a tela de seleção de classes
     def run(self):
         self.running = True
@@ -120,7 +128,7 @@ class ClassSelectionScreen:
                 self.screen.blit(self.bg_image, (0, 0))
             text_p1 = self.font.render("Jogador 1", True, VERMELHO)
             self.screen.blit(text_p1, text_p1.get_rect(center=(self.largura//2, 75)))
-            text_p2 = self.font.render("Jogador 2", True, VERMELHO)
+            text_p2 = self.font.render("Jogador 2", True, AZUL)
             self.screen.blit(text_p2, text_p2.get_rect(center=(self.largura//2, 325)))
             
             mouse_pos = pygame.mouse.get_pos()

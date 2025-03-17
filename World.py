@@ -148,7 +148,7 @@ class World:
         pygame.draw.rect(display, PRETO, (panel_x+2, panel_y+2, panel_width-4, panel_height-4), border_radius=8)
         
         # Desenha o sprite do jogador
-        sprite = pygame.transform.scale(player.image, (100, 100))
+        sprite = pygame.transform.smoothscale(player.image, (100, 100))
         display.blit(sprite, (panel_x + (panel_width-100)//2, panel_y + 10))
         
         # Configurações da fonte para os stats

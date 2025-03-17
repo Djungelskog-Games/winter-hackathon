@@ -30,8 +30,8 @@ class SplashScreen:
         
         try:
             # Tenta carregar a imagem de sobreposição (texto animado)
-            overlay_image = pygame.image.load("assets/Starting/Starting_Text.png").convert_alpha()
-            overlay_rect = overlay_image.get_rect(center=(self.largura // 2, 150))  # Centraliza a imagem
+            overlay_image = pygame.image.load("assets/Starting/faunabellum.png").convert_alpha()
+            overlay_rect = overlay_image.get_rect(center = (self.largura // 4, 150))  # Centraliza a imagem
         except pygame.error:
             # Caso a imagem não seja encontrada, cria uma superfície semi-transparente
             overlay_image = pygame.Surface((600, 100), pygame.SRCALPHA)
@@ -50,7 +50,7 @@ class SplashScreen:
             overlay_rect2 = overlay_text.get_rect(center=(self.largura // 2, 250))
 
         # Configurações da animação
-        amplitude = 10  # Altura do movimento em pixels
+        amplitude = 5  # Altura do movimento em pixels
         velocidade = 0.04  # Velocidade da animação
         angulo = 0  # Ângulo inicial para a função seno
         clock = pygame.time.Clock()  # Relógio para controlar a taxa de atualização
