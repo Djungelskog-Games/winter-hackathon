@@ -50,6 +50,7 @@ class PowerupSelectionScreen:
             self.screen.fill(PRETO)
             if self.powerup_bg:
                 self.screen.blit(self.powerup_bg, (0, self.bg_y))
+                self.screen.blit(self.powerup_bg, (0, self.bg_y + self.powerup_bg.get_height()))
                 self.bg_y -= 0.5
                 if self.bg_y < -self.powerup_bg.get_height():
                     self.bg_y = 0
