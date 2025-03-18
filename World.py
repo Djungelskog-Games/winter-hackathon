@@ -2,7 +2,7 @@ import pygame
 import sys
 import random
 import time
-from constants import TILE_SIZE, SCALE, PRETO, DOURADO, BRANCO, VERMELHO, FONT, SOUNDS, VERDE, AZUL
+from constants import TILE_SIZE, SCALE, PRETO, DOURADO, BRANCO, VERMELHO, FONT, FONT2, SOUNDS, VERDE, AZUL
 from Player import Player, attack
 
 VERDE = (0, 255, 0)
@@ -148,7 +148,7 @@ class World:
         pygame.draw.rect(display, PRETO, (panel_x+2, panel_y+2, panel_width-4, panel_height-4), border_radius=8)
         
         # Desenha o sprite do jogador
-        sprite = pygame.transform.smoothscale(player.image, (100, 100))
+        sprite = pygame.transform.smoothscale(player.stats_image, (100, 100))
         display.blit(sprite, (panel_x + (panel_width-100)//2, panel_y + 10))
         
         # Configurações da fonte para os stats
@@ -202,6 +202,7 @@ class World:
         
         # Configurações da fonte
         font = pygame.font.Font(FONT, 40)
+        font2 = pygame.font.Font(FONT2, 30)
         controls_font = pygame.font.Font(FONT, 28)
 
         while running:
@@ -324,12 +325,12 @@ class World:
             self.player2.draw(self.display, offset_x, offset_y)
 
             # Desenha o texto do turno atual
-            turn_text = font.render(f"TURNO DO JOGADOR: {self.current_turn.upper()}", True, DOURADO)
+            turn_text = font.render(f"TURNO DO JOGADOR: {self.current_turn.upper()}", True, VERMELHO if self.current_turn == "p1" else AZUL)
             text_rect = turn_text.get_rect(center=(self.screen_width//2, 70))
             self.display.blit(turn_text, text_rect)
             
             # Desenha os controls na parte inferior do ecrã
-            controls_y = self.screen_height - 100
+            controls_y = self.screen_height - 80
             controls = [
                 "WASD - Movimentar Jogador 1                            SETAS - Movimentar Jogador 2",
                 "SPACE - Atacar                                 ENTER - Finalizar Turno",
@@ -339,7 +340,7 @@ class World:
             
             for i, text in enumerate(controls):
                 control_text = controls_font.render(text, True, DOURADO)
-                text_rect = control_text.get_rect(center=(self.screen_width//2, controls_y + i*25))
+                text_rect = control_text.get_rect(center=(self.screen_width//2, controls_y + i*30))
                 self.display.blit(control_text, text_rect)
 
             # Atualiza o ecrã

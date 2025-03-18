@@ -16,7 +16,8 @@ class Player:
         # Define o fator de escala e o tamanho do sprite
         self.sprite_scale_factor = scale * 0.45
         sprite_size = int(TILE_SIZE * scale * self.sprite_scale_factor)
-        self.image = pygame.transform.scale(full_image, (sprite_size, sprite_size))
+        self.image = pygame.transform.smoothscale(full_image, (sprite_size, sprite_size))
+        self.stats_image = pygame.transform.scale(full_image, (100, 100))
         self.sprite_width = sprite_size
         self.sprite_height = sprite_size
 

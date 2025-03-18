@@ -1,5 +1,5 @@
 import pygame
-from constants import PRETO, FONT, VERMELHO, SOUNDS 
+from constants import PRETO, FONT2, VERMELHO, SOUNDS, BRANCO
 import math
 import sys
 
@@ -18,9 +18,8 @@ class SplashScreen:
         try:
             # Tenta carregar a imagem de fundo do ecrã de splash
             splash_image = pygame.image.load("assets/Starting/Starting_Screen.png").convert()
-            original_size = splash_image.get_size()
-            new_size = (int(original_size[0] * 0.8), int(original_size[1] * 0.8))  # Redimensiona a imagem
-            splash_image = pygame.transform.scale(splash_image, new_size)
+            new_size = (self.largura, self.altura)  # Redimensiona a imagem
+            splash_image = pygame.transform.smoothscale(splash_image, new_size)
             image_rect = splash_image.get_rect(center=(self.largura // 2, self.altura // 2))  # Centraliza a imagem
         except pygame.error:
             # Caso a imagem não seja encontrada, cria um fundo preto
@@ -31,7 +30,8 @@ class SplashScreen:
         try:
             # Tenta carregar a imagem de sobreposição (texto animado)
             overlay_image = pygame.image.load("assets/Starting/faunabellum.png").convert_alpha()
-            overlay_rect = overlay_image.get_rect(center = (self.largura // 4, 150))  # Centraliza a imagem
+            overlay_image = pygame.transform.smoothscale(overlay_image, (350, 167))
+            overlay_rect = overlay_image.get_rect(center = (self.largura // 4, 150))
         except pygame.error:
             # Caso a imagem não seja encontrada, cria uma superfície semi-transparente
             overlay_image = pygame.Surface((600, 100), pygame.SRCALPHA)
@@ -39,15 +39,18 @@ class SplashScreen:
             overlay_rect = overlay_image.get_rect(center=(self.largura // 2, 150))
         
         try:
-            # Tenta renderizar o texto "Pressione qualquer tecla para continuar"
-            text_font = pygame.font.Font(FONT, 60)
-            overlay_text = text_font.render("Pressione qualquer tecla para continuar", True, VERMELHO)
-            overlay_rect2 = overlay_text.get_rect(center=(self.largura // 2, 550))  # Centraliza o texto
+            overlay_image2 = pygame.image.load("assets/Starting/Starting_Text.png").convert_alpha()
+            overlay_image2 = pygame.transform.smoothscale(overlay_image2, (495, 123))
+            overlay_rect2 = overlay_image2.get_rect(center=(self.largura - 300, 500))  # Centraliza o texto
         except pygame.error:
             # Caso ocorra um erro, cria uma superfície semi-transparente
             overlay_text = pygame.Surface((600, 100), pygame.SRCALPHA)
             overlay_text.fill((0, 0, 0, 180))
             overlay_rect2 = overlay_text.get_rect(center=(self.largura // 2, 250))
+        
+        font2 = pygame.font.Font(FONT2, 15)
+        overlay_credit = font2.render("©Djungelskog Games 2025", True, BRANCO)
+        overlay_credit_rect = overlay_credit.get_rect(center=(self.largura - 115, self.altura - 20))
 
         # Configurações da animação
         amplitude = 5  # Altura do movimento em pixels
@@ -60,16 +63,17 @@ class SplashScreen:
             deslocamento_y = math.sin(angulo) * amplitude
             overlay_rect.centery = 150 + deslocamento_y  # Aplica o deslocamento à posição vertical
             angulo += velocidade  # Atualiza o ângulo para a próxima iteração
-
+        
             # Redesenha todos os elementos no ecrã
             self.screen.blit(splash_image, image_rect)  # Fundo
-            self.screen.blit(overlay_image, overlay_rect)  # Texto animado
-            self.screen.blit(overlay_text, overlay_rect2)  # Instrução para continuar
+            self.screen.blit(overlay_image, (self.largura // 4 - 175, overlay_rect.centery - 100))  # Texto animado
+            self.screen.blit(overlay_image2, overlay_rect2)  # Instrução para continuar
+            self.screen.blit(overlay_credit, overlay_credit_rect)
             pygame.display.flip()  # Atualiza o ecrã
-
+        
             # Controla a taxa de atualização para 60 FPS
             clock.tick(60)
-
+        
             # Processamento de eventos
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

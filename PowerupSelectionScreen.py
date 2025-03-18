@@ -16,8 +16,7 @@ class PowerupSelectionScreen:
         
         try:
             # Tenta carregar a imagem de fundo do ecrã de seleção de powerups
-            self.powerup_bg = pygame.image.load("assets/Classes/Powerup_Background.png").convert_alpha()
-            self.powerup_bg = pygame.transform.scale(self.powerup_bg, screen.get_size())
+            self.powerup_bg = pygame.image.load("assets/Classes/Background.png")
         except pygame.error:
             self.powerup_bg = None  # Caso a imagem não seja encontrada
 
@@ -37,34 +36,32 @@ class PowerupSelectionScreen:
             btn = PowerupButton(x, y, button_width, button_height, powerup, self.select_powerup)
             self.buttons.append(btn)
 
+        self.bg_y = 0
+
     def select_powerup(self, powerup):
         # Define o powerup selecionado
         self.selected_powerup = powerup
 
     def run(self):
-        running = True
+        self.running = True
         clock = pygame.time.Clock()
-        title_font = pygame.font.Font(FONT, 70)  # Fonte para o título
-        
-        # Configurações da animação de onda seno
-        amplitude = 10  # Altura do movimento em pixels
-        velocidade = 0.05  # Velocidade da animação
-        angulo = 0  # Ângulo inicial
-        
-        while running:
-            # Desenha o fundo do ecrã
+        angulo = 0
+        while self.running:
+            self.screen.fill(PRETO)
             if self.powerup_bg:
-                self.screen.blit(self.powerup_bg, (0, 0))
-            else:
-                self.screen.fill(PRETO)
+                self.screen.blit(self.powerup_bg, (0, self.bg_y))
+                self.bg_y -= 0.5
+                if self.bg_y < -self.powerup_bg.get_height():
+                    self.bg_y = 0
 
             # Calcula o movimento vertical usando a função seno
-            deslocamento_y = math.sin(angulo) * amplitude
-            angulo += velocidade  # Atualiza o ângulo para a próxima iteração
-            
+            amplitude = 10  # Altura do movimento em pixels
+            velocidade = 0.05  # Velocidade da animação
+
             # Renderiza o texto do título com animação
+            title_font = pygame.font.Font(FONT, 70)  # Fonte para o título
             title_text = title_font.render(f"{self.player.upper()} - Escolhe um Powerup:", True, VERMELHO)
-            title_rect = title_text.get_rect(center=(self.screen.get_width()//2, 100 + deslocamento_y))
+            title_rect = title_text.get_rect(center=(self.screen.get_width()//2, 100 + math.sin(angulo) * amplitude))
             self.screen.blit(title_text, title_rect)
 
             # Desenha os botões de powerup
@@ -86,5 +83,7 @@ class PowerupSelectionScreen:
                             return self.selected_powerup  # Retorna o powerup selecionado
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     return None  # Retorna None se o jogador pressionar ESC
-            
+
+            angulo += velocidade  # Atualiza o ângulo para a próxima iteração
+
             clock.tick(60)  # Controla a taxa de atualização para 60 FPS
