@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 import time
+import math
 from constants import TILE_SIZE, SCALE, PRETO, DOURADO, BRANCO, VERMELHO, FONT, FONT2, SOUNDS, VERDE, AZUL
 from Player import Player, attack
 
@@ -71,10 +72,10 @@ class World:
         
         # Inicializa os jogadores
         self.player1 = Player(self.player_images.get(player1_class), 
-                             pos1, speed=0.5, scale=self.scale, 
+                             pos1, speed=0.3, scale=self.scale, 
                              class_name=player1_class, font=font, powerups=p1_powerups)
         self.player2 = Player(self.player_images.get(player2_class), 
-                             pos2, speed=0.5, scale=self.scale, 
+                             pos2, speed=0.3, scale=self.scale, 
                              class_name=player2_class, font=font, powerups=p2_powerups)
         
         # Define o turno inicial e os movimentos restantes
@@ -194,6 +195,7 @@ class World:
     def draw_map(self):
         winner = None
         running = True
+        angulo = 0
         clock = pygame.time.Clock()
         
         # Controls dos jogadores
@@ -324,11 +326,15 @@ class World:
             self.player1.draw(self.display, offset_x, offset_y)
             self.player2.draw(self.display, offset_x, offset_y)
 
-            # Desenha o texto do turno atual
-            turn_text = font.render(f"TURNO DO JOGADOR: {self.current_turn.upper()}", True, VERMELHO if self.current_turn == "p1" else AZUL)
-            text_rect = turn_text.get_rect(center=(self.screen_width//2, 70))
-            self.display.blit(turn_text, text_rect)
+            # Desenha a imagem do turno atual
+            amplitude = 5  # Altura do movimento em pixels
+            velocidade = 0.025  # Velocidade da animação
+            turn_image = pygame.image.load("assets/Starting/turnodojogadorp1.png" if self.current_turn == "p1" else "assets/Starting/turnodojogadorp2.png")
+            image_rect = turn_image.get_rect(center=(self.screen_width // 2, 50 + math.sin(angulo) * amplitude))
+            self.display.blit(turn_image, image_rect)
             
+            angulo += velocidade
+
             # Desenha os controls na parte inferior do ecrã
             controls_y = self.screen_height - 80
             controls = [

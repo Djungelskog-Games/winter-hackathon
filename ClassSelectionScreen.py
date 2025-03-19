@@ -21,7 +21,7 @@ class ClassSelectionScreen:
         self.amplitude = 10  # Amplitude of the sine wave
 
         self.screen = pygame.display.set_mode((self.largura, self.altura))
-        pygame.display.set_caption("")
+        pygame.display.set_caption("Fauna Bellum")
         try:
             self.bg_image = pygame.image.load("assets/Classes/Background.png")
         except pygame.error:
