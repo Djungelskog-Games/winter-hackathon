@@ -61,7 +61,7 @@ class ClassSelectionScreen:
         for i, btn in enumerate(self.buttons_p2):
             btn.phase = i * (math.pi / 2) + math.pi
 
-        self.confirm_button = BotaoIcone(self.largura//2, self.altura - 90, 
+        self.confirm_button = BotaoIcone(self.largura//2, self.altura - 75, 
                                          "assets/Classes/confirm_button.png", "Confirmar", 
                                          lambda p, c: self.confirm_selection(), "confirm", (314, 98))
         
@@ -137,12 +137,10 @@ class ClassSelectionScreen:
             for btn in self.buttons_p1 + self.buttons_p2:
                 btn.update_animation(self.animation_offset, self.amplitude)
 
-            font2 = pygame.font.Font(FONT2, 30)
-
-            text_p1 = font2.render("Jogador 1", True, VERMELHO)
-            self.screen.blit(text_p1, text_p1.get_rect(center=(self.largura//2, 50)))
-            text_p2 = font2.render("Jogador 2", True, AZUL)
-            self.screen.blit(text_p2, text_p2.get_rect(center=(self.largura//2, 300)))
+            image_p1 = pygame.image.load("assets/Starting/jogador1.png")
+            self.screen.blit(image_p1, image_p1.get_rect(center=(self.largura//2, 50)))
+            image_p2 = pygame.image.load("assets/Starting/jogador2.png")
+            self.screen.blit(image_p2, image_p2.get_rect(center=(self.largura//2, 300)))
             
             mouse_pos = pygame.mouse.get_pos()
             self.hovered_class = None
