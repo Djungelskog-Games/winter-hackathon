@@ -10,7 +10,7 @@ class Player:
         except pygame.error:
             full_image = pygame.Surface((TILE_SIZE * scale, TILE_SIZE * scale))
             full_image.fill(VERDE)
-        
+
         self.sprite_scale_factor = scale * 0.45
         sprite_size = int(TILE_SIZE * scale * self.sprite_scale_factor)
         self.image = pygame.transform.smoothscale(full_image, (sprite_size, sprite_size))
@@ -28,7 +28,7 @@ class Player:
 
         # Timer for movement bobbing animation
         self.move_animation_time = 0
-        
+
         # Timer for knockback animation
         self.knockback_duration = 200  # duration in ms
         self.knockback_time = 0
@@ -38,7 +38,7 @@ class Player:
         move_range_dict = {"Lebre": 4, "Bufo": 3, "Raposa": 2, "Urso": 5, "Arqueiro": 5}
         attack_range_dict = {"Lebre": 1, "Bufo": 2, "Raposa": 3, "Urso": 4, "Arqueiro": 5}
         min_attack_range_dict = {"Lebre": 0, "Bufo": 0, "Raposa": 0, "Urso": 0, "Arqueiro": 4}
-        
+
         self.base_health = health_dict[class_name]
         self.base_attack = attack_dict[class_name]
         self.base_move_range = move_range_dict[class_name]
@@ -69,7 +69,8 @@ class Player:
                 self.regeneration += p['value']
             elif p['type'] == 'armor':
                 self.max_health += p['value']['health']
-                self.move_range += p['value']['move_range']
+                if self.move_range > 1:
+                    self.move_range += p['value']['move_range']
             elif p['type'] == 'lifesteal':
                 self.lifesteal_percentage += p['value']
 
@@ -89,6 +90,7 @@ class Player:
         self.health += health_restored
         self.life_stolen_amount = health_restored
         if self.lifesteal_percentage > 0:
+            SOUNDS['vida'].play()
             self.life_stolen_time = 2000
         if self.health > self.max_health:
             self.health = self.max_health
@@ -135,7 +137,7 @@ class Player:
         # Update knockback animation timer if active
         if self.knockback_time > 0:
             self.knockback_time = max(0, self.knockback_time - dt)
-        
+
         if self.damage_display_time > 0:
             self.damage_display_time = max(0, self.damage_display_time - dt)
 
@@ -151,7 +153,7 @@ class Player:
         tile_top_left_y = offset_y + self.pixel_y
         tile_center_x = tile_top_left_x + tile_pixel_size / 2
         tile_center_y = tile_top_left_y + tile_pixel_size / 2
-        
+
         # Calculate vertical offset from either movement or knockback animation.
         bob_offset = 0
         if self.moving:
@@ -167,12 +169,12 @@ class Player:
         sprite_draw_x = tile_center_x - self.sprite_width / 2
         sprite_draw_y = tile_center_y - self.sprite_height / 2 + bob_offset
         display.blit(self.image, (sprite_draw_x, sprite_draw_y))
-        
+
         if self.damage_display_time > 0:
             damage_text = self.font.render(f"-{self.last_damage}", True, VERMELHO)
             text_rect = damage_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
             display.blit(damage_text, text_rect)
-        
+
         if self.life_stolen_time > 0:
             life_stolen_text = self.font.render(f"+{self.life_stolen_amount}", True, VERDE)
             text_rect = life_stolen_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
@@ -186,7 +188,7 @@ class Player:
 
 def attack(attacker, defender, coor_pedras):
     SOUNDS[attacker.class_name].play()
-    
+
     align = (attacker.grid_x == defender.grid_x or attacker.grid_y == defender.grid_y)
     if (abs(attacker.grid_x - defender.grid_x) <= attacker.attack_range and
         abs(attacker.grid_y - defender.grid_y) <= attacker.attack_range and
@@ -238,6 +240,6 @@ def attack(attacker, defender, coor_pedras):
                 defender.pixel_x = new_x * TILE_SIZE * SCALE
                 defender.pixel_y = new_y * TILE_SIZE * SCALE
                 defender.moving = False
-        
+
         # Trigger knockback animation on defender:
         defender.knockback_time = defender.knockback_duration
