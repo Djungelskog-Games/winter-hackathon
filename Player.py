@@ -177,12 +177,12 @@ class Player:
 
         if self.life_stolen_time > 0:
             life_stolen_text = self.font.render(f"+{self.life_stolen_amount}", True, VERDE)
-            text_rect = life_stolen_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
+            text_rect = life_stolen_text.get_rect(center=(tile_center_x, sprite_draw_y - 40))
             display.blit(life_stolen_text, text_rect)
 
         if self.regeneration_display_time > 0:
             regeneration_text = self.font.render(f"+{self.regeneration}", True, VERDE)
-            text_rect = regeneration_text.get_rect(center=(tile_center_x, sprite_draw_y - 20))
+            text_rect = regeneration_text.get_rect(center=(tile_center_x, sprite_draw_y - 40))
             display.blit(regeneration_text, text_rect)
 
 
