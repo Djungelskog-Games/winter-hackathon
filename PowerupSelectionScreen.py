@@ -60,10 +60,10 @@ class PowerupSelectionScreen:
             velocidade = 0.05  # Velocidade da animação
 
             # Renderiza o texto do título com animação
-            title_font = pygame.font.Font(FONT, 70)  # Fonte para o título
-            title_text = title_font.render(f"{self.player.upper()} - Escolhe um Powerup:", True, VERMELHO)
-            title_rect = title_text.get_rect(center=(self.screen.get_width()//2, 100 + math.sin(angulo) * amplitude))
-            self.screen.blit(title_text, title_rect)
+            title_image = pygame.image.load("assets/Starting/escolherpowerup.png" if self.player == "player1" else "assets/Starting/escolherpowerup2.png")
+            title_image = pygame.transform.smoothscale(title_image, (600, 101))
+            title_rect = title_image.get_rect(center=(self.screen.get_width()//2, 100 + math.sin(angulo) * amplitude))
+            self.screen.blit(title_image, title_rect)
 
             # Desenha os botões de powerup
             for btn in self.buttons:

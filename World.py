@@ -331,10 +331,19 @@ class World:
 
             angulo += velocidade
 
+            wasd_image = pygame.image.load("assets/Starting/wasd.png")
+            setas_image = pygame.image.load("assets/Starting/setas.png")
+            wasd_image = pygame.transform.smoothscale(wasd_image, (125, 125))
+            setas_image = pygame.transform.smoothscale(setas_image, (125, 125))
+            wasd_rect = wasd_image.get_rect(center=(self.screen_width // 2 - 345, 475 + math.sin(angulo) * amplitude))
+            setas_rect = setas_image.get_rect(center=(self.screen_width // 2 + 345, 475 + math.sin(angulo) * amplitude))
+            self.display.blit(wasd_image, wasd_rect)
+            self.display.blit(setas_image, setas_rect)
+
             # Desenha os controls na parte inferior do ecrã
             controls_y = self.screen_height - 80
             controls = [
-                "WASD - Movimentar Jogador 1                            SETAS - Movimentar Jogador 2",
+                "",
                 "SPACE - Atacar",
                 ""
                 "Nota: Apenas e possivel atacar uma vez por movimento."
