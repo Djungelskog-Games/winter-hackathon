@@ -215,13 +215,7 @@ class World:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:
-                        # Finaliza o turno do jogador atual
-                        if self.current_turn == "p1":
-                            self.player1.moves_remaining = 0
-                        else:
-                            self.player2.moves_remaining = 0
-                    elif event.key == pygame.K_SPACE:
+                    if event.key == pygame.K_SPACE:
                         # Realiza um ataque
                         if self.current_turn == "p1":
                             if self.player1.stamina:
@@ -341,7 +335,7 @@ class World:
             controls_y = self.screen_height - 80
             controls = [
                 "WASD - Movimentar Jogador 1                            SETAS - Movimentar Jogador 2",
-                "SPACE - Atacar                                 ENTER - Finalizar Turno",
+                "SPACE - Atacar",
                 ""
                 "Nota: Apenas e possivel atacar uma vez por movimento."
             ]

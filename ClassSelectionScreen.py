@@ -3,7 +3,6 @@ import math  # Add math import for sine function
 from constants import BRANCO, PRETO, SOUNDS, SECRET, VERMELHO, AZUL, FONT2
 import sys
 import time
-from Player import Player
 from BotaoIcone import BotaoIcone
 
 class ClassSelectionScreen:
