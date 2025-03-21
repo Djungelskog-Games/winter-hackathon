@@ -14,11 +14,11 @@ class Game:
     # Inicializa a classe
     def __init__(self):
         pygame.init()
-        self.screen_width = 1300
-        self.screen_height = 638
+        self.screen_width = 960
+        self.screen_height = 640
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.key.set_repeat()
-        pygame.display.set_caption("Guerra por Sintra")
+        pygame.display.set_caption("Fauna Bellum")
         self.font = pygame.font.Font(FONT, 30)
         self.p1_score = 0
         self.p2_score = 0
