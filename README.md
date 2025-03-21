@@ -1,6 +1,6 @@
 # winter-hackathon
 Projeto para o Winter Hackathon 2025 do ISCTE
-# 🦉 Guerra por Sintra: Batalha Faunística 🐾
+# 🦉 Fauna Bellum: Batalha Faunística 🐾
 
 **Um jogo de estratégia por turnos 1v1 com a fauna mística da Serra de Sintra**
 
