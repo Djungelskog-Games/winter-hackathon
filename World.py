@@ -63,7 +63,7 @@ class World:
             "Bufo": "assets/Classes/Bufo.png",
             "Raposa": "assets/Classes/Raposa.png",
             "Urso": "assets/Classes/Urso.png",
-            "Arqueiro": "assets/Classes/archer.png"
+            "Salamandra": "assets/Classes/Salamandra.png"
         }
 
         # Define as posições iniciais dos jogadores
@@ -118,8 +118,8 @@ class World:
                                     path_clear = False
                                     break
 
-                        # Se a classe escolhida for o arqueiro, este não desenha o alcance de ataque nos 4 blocos mais perto
-                        if current_player.class_name == "Arqueiro" and abs(dx) + abs(dy) <= 3:
+                        # Se a classe escolhida for o Salamandra, este não desenha o alcance de ataque nos 4 blocos mais perto
+                        if current_player.class_name == "Salamandra" and abs(dx) + abs(dy) <= 3:
                             continue
 
                         if path_clear:
@@ -166,7 +166,7 @@ class World:
         display.blit(move_text, (panel_x + 20, panel_y + y_offset))
         y_offset += 30
 
-        if player.class_name == "Arqueiro":    # Desenha o alcance
+        if player.class_name == "Salamandra":    # Desenha o alcance
             range_text = stats_font.render(f"Alcance: {player.min_attack_range} - {player.attack_range}", True, BRANCO)
             display.blit(range_text, (panel_x + 20, panel_y + y_offset))
             y_offset += 30
